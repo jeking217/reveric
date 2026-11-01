@@ -290,6 +290,12 @@ make build-macos-release   # 构建 macOS 客户端
 make build-windows-release # 构建 Windows 客户端
 ```
 
+```bash
+fvm flutter doctor          # 工具链体检
+fvm flutter test            # 跑全部测试
+fvm flutter run -d windows   # 跑桌面端
+```
+
 ---
 
 ## 问题反馈
