@@ -85,7 +85,7 @@ H3 的视频参考每段 2 至 15 秒、总计≤15 秒，音频同样检查总�
 
 来源：[Seedance 2.5 模型说明](https://docs.volcengine.com/docs/ark/seedance-2-5)、[创建任务参数](https://docs.volcengine.com/docs/ark/create-video-generation-task-api?lang=zh)、[H3 生成指南](https://platform.minimax.io/docs/guides/video-generation)、[H3 创建任务](https://platform.minimax.io/docs/api-reference/video-generation-v2-create)、[H3 查询任务](https://platform.minimax.io/docs/api-reference/video-generation-v2-query)。核对日期为 2026-10-05，合同测试保存本次固定样例；上游新增能力不会自动扩大现有请求。
 
-Wan 接入仅覆盖 **3.0**，具体模型为 `wan3.0-video` 与 `wan3.0-video-prime`，不实现 2.x 适配。使用用户填写的同地域 workspace Endpoint 与 API Key；POST `/api/v1/services/aigc/video-generation/video-synthesis`，请求带 `X-DashScope-Async: enable`，GET `/api/v1/tasks/{task_id}` 查询。输入使用 `input.prompt` 与有序 `input.media[{type,url}]`，结果读取 `output.task_status` 与 `output.video_url`。
+Wan 接入仅覆盖 **3.0**，具体模型为 `wan3.0-video` 与 `wan3.0-video-prime`，不实现 2.x 适配。使用用户填写的同地域 workspace Endpoint 与 API Key；POST `/api/v1/services/aigc/video-generation/video-synthesis`，创建请求带 `X-DashScope-Async: enable`，GET `/api/v1/tasks/{task_id}` 查询且**不得**携带该请求头（查询属同步接口，携带时 workspace Endpoint 返回 `403 access_denied: current user api does not support asynchronous calls`）。输入使用 `input.prompt` 与有序 `input.media[{type,url}]`，结果读取 `output.task_status` 与 `output.video_url`。
 
 E1 覆盖文生、首帧、首尾帧和图片/视频/音频参考四种模式；不开放文档、网页、编辑或延长的独立模式。应用默认 720P、5 秒、明确画幅，默认 audio=true、prompt_extend=true，均作为明确参数传入；不使用智能时长。模型支持 480P/720P/1080P、2 至 30 整数秒；有参考视频时输入总时长加输出时长不得超过 30 秒。参考最多 10 图、5 视频、5 音频，视频和音频总时长各不超过 15 秒，首尾帧与 reference 类型互斥。Wan 图片上限 20MB，视频继续沿用本产品 50MB 预算，音频 15MB。超过限制提交前拒绝，不截断提示词或丢弃参考。
 
