@@ -85,3 +85,14 @@ dist/
 
 # 商业授权介绍材料，仅本地保留
 designs/pitch/
+
+# Android/打包工具链在本地生成的中间产物
+**/.gradle/*
+**/android/build/
+/third/fvp/windows/fvp-deps.lock
+
+# Windows 打包脚本运行时下载的安装器，体积大不入库
+/windows/packaging/exe/vc_redist.x64.exe
+
+# Windows 保留设备名，重定向误产生的空文件
+/nul
