@@ -128,6 +128,9 @@ class GeminiClient implements ProviderClient {
         final toolResults = msg.blocks.whereType<ToolResultBlock>().toList();
         if (toolResults.isNotEmpty) {
           final parts = <gai.Part>[];
+          // 图片必须排在所有 functionResponse 之后：Gemini 要求同一轮的
+          // functionResponse 连续，中间插入 inlineData 会被判为非法内容序列。
+          final trailingImages = <ImageBlock>[];
           for (final tr in toolResults) {
             final textBuf = StringBuffer();
             final imgs = <ImageBlock>[];
@@ -156,9 +159,10 @@ class GeminiClient implements ProviderClient {
                 ),
               ),
             );
-            for (final img in imgs) {
-              parts.add(_imageToPart(img));
-            }
+            trailingImages.addAll(imgs);
+          }
+          for (final img in trailingImages) {
+            parts.add(_imageToPart(img));
           }
           // 连续 tool_result / user 消息并入同一个 user turn（角色交替约束）
           _appendContent(contents, 'user', parts);

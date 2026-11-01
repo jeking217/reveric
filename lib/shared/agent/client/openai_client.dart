@@ -21,6 +21,7 @@ import '../message.dart'
     show
         AgentMessage,
         AgentMessageRole,
+        AgentMessageType,
         ImageBlock,
         TextBlock,
         ThinkingBlock,
@@ -211,17 +212,31 @@ class OpenAiClient implements ProviderClient {
     );
   }
 
-  List<openai.ChatMessage> _convertOne(AgentMessage msg) {
+  /// 转换单条消息。
+  ///
+  /// 工具结果里的图片**不能在 [messages] 里就地跟随该条 tool 消息下发**：
+  /// OpenAI 兼容协议要求 assistant(tool_calls) 之后必须连续跟齐每个
+  /// tool_call 对应的 tool 消息。并行调用时若在中间插入 user(images)，网关会
+  /// 直接回 400 `insufficient tool messages following tool_calls message`。
+  /// 因此图片单独收集，由 [convertMessages] 在整个工具轮结束后统一追加。
+  ({List<openai.ChatMessage> messages, List<openai.ContentPart> images})
+  _convertOne(AgentMessage msg) {
     switch (msg.role) {
       case AgentMessageRole.system:
-        return [openai.ChatMessage.system(sanitizeSurrogates(msg.content))];
+        return (
+          messages: [openai.ChatMessage.system(sanitizeSurrogates(msg.content))],
+          images: const [],
+        );
 
       case AgentMessageRole.user:
-        // Tool result message: emit ChatMessage.tool + optional follow-up user image turn
+        // Tool result message: emit only ChatMessage.tool entries.
         final toolResults = msg.blocks.whereType<ToolResultBlock>().toList();
         if (toolResults.isNotEmpty) {
           final out = <openai.ChatMessage>[];
-          final imageBlocks = <ImageBlock>[];
+          final imageBlocks = <ImageBlock>[
+            for (final block in msg.blocks)
+              if (block is ImageBlock) block,
+          ];
           for (final tr in toolResults) {
             final textBuf = StringBuffer();
             for (final c in tr.content) {
@@ -245,23 +260,18 @@ class OpenAiClient implements ProviderClient {
               ),
             );
           }
-          if (imageBlocks.isNotEmpty) {
-            out.add(
-              openai.ChatMessage.user([
-                openai.ContentPart.text('Tool result image(s):'),
-                ...imageBlocks.map(_imageToPart),
-              ]),
-            );
-          }
-          return out;
+          return (messages: out, images: imageBlocks.map(_imageToPart).toList());
         }
 
         // Regular user message: text + image parts
         final imgs = msg.blocks.whereType<ImageBlock>().toList();
         final texts = msg.blocks.whereType<TextBlock>().toList();
         if (imgs.isEmpty && texts.isEmpty) {
-          if (msg.content.isEmpty) return const [];
-          return [openai.ChatMessage.user(sanitizeSurrogates(msg.content))];
+          if (msg.content.isEmpty) return (messages: const [], images: const []);
+          return (
+            messages: [openai.ChatMessage.user(sanitizeSurrogates(msg.content))],
+            images: const [],
+          );
         }
         final parts = <openai.ContentPart>[];
         if (msg.content.isNotEmpty) {
@@ -279,8 +289,8 @@ class OpenAiClient implements ProviderClient {
               break;
           }
         }
-        if (parts.isEmpty) return const [];
-        return [openai.ChatMessage.user(parts)];
+        if (parts.isEmpty) return (messages: const [], images: const []);
+        return (messages: [openai.ChatMessage.user(parts)], images: const []);
 
       case AgentMessageRole.assistant:
         final toolCalls = <openai.ToolCall>[];
@@ -342,31 +352,56 @@ class OpenAiClient implements ProviderClient {
         }
         final contentStr = contentBuf.toString();
         if (contentStr.isEmpty && toolCalls.isEmpty) {
-          return const [];
+          return (messages: const [], images: const []);
         }
-        return [
-          openai.AssistantMessage(
-            content: contentStr.isNotEmpty
-                ? sanitizeSurrogates(contentStr)
-                : null,
-            toolCalls: toolCalls.isNotEmpty ? toolCalls : null,
-            reasoningContent: useOpenRouter ? null : thinking,
-            reasoning: useOpenRouter && reasoningDetails == null
-                ? thinking
-                : null,
-            reasoningDetails: reasoningDetails,
-          ),
-        ];
+        return (
+          messages: [
+            openai.AssistantMessage(
+              content: contentStr.isNotEmpty
+                  ? sanitizeSurrogates(contentStr)
+                  : null,
+              toolCalls: toolCalls.isNotEmpty ? toolCalls : null,
+              reasoningContent: useOpenRouter ? null : thinking,
+              reasoning: useOpenRouter && reasoningDetails == null
+                  ? thinking
+                  : null,
+              reasoningDetails: reasoningDetails,
+            ),
+          ],
+          images: const [],
+        );
     }
   }
 
+  /// 把 agent 上下文转成 wire 消息。
+  ///
+  /// 工具结果携带的图片统一攒到**整个工具轮结束后**补一条 user 消息，保证
+  /// assistant(tool_calls) 之后紧跟的是完整连续的 tool 消息 —— 并行工具调用
+  /// 时逐条插图片会被 OpenAI 兼容网关判为 insufficient tool messages。
   @visibleForTesting
   List<openai.ChatMessage> convertMessages(List<AgentMessage> messages) {
     preflightProviderHistory(messages, ProviderHistoryPolicy.openAiChat);
     final out = <openai.ChatMessage>[];
-    for (final msg in messages) {
-      out.addAll(_convertOne(msg));
+    final pendingImages = <openai.ContentPart>[];
+    void flushImages() {
+      if (pendingImages.isEmpty) return;
+      out.add(
+        openai.ChatMessage.user([
+          openai.ContentPart.text('Tool result image(s):'),
+          ...pendingImages,
+        ]),
+      );
+      pendingImages.clear();
     }
+
+    for (final msg in messages) {
+      // 非工具结果消息意味着上一轮工具调用已经结束，先把攒下的图片补上。
+      if (msg.type != AgentMessageType.tool_result) flushImages();
+      final converted = _convertOne(msg);
+      out.addAll(converted.messages);
+      pendingImages.addAll(converted.images);
+    }
+    flushImages();
     return out;
   }
 

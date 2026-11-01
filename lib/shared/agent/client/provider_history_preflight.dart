@@ -136,7 +136,10 @@ void preflightProviderHistory(
             pending.length,
           );
         }
-      } else {
+      } else if (block is! ImageBlock) {
+        // 图片块不算「夹带其它内容」：各 client 会把工具结果里的图片挪到
+        // 整个工具轮之后（Anthropic/Responses 则内联进工具结果），
+        // 不会打断 tool_call → tool 的连续性。
         firstNonResultBlockIndex ??= blockIndex;
       }
     }
