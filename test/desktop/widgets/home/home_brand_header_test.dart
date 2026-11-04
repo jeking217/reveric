@@ -10,11 +10,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:reveric/desktop/widgets/desktop_window_frame.dart';
 import 'package:reveric/desktop/widgets/home/home_brand_header.dart';
 import 'package:reveric/shared/app_config.dart';
 import 'package:reveric/shared/theme/theme.dart';
 
-const double _sidebarWidth = 240;
+const double _sidebarWidth = RevericSizes.sidebarWidth;
 
 Widget _wrap({double width = _sidebarWidth}) {
   return MaterialApp(
@@ -65,5 +66,22 @@ void main() {
     // 单行：实际高度不超过字号的两倍；折成两行会明显超过。
     final fontSize = paragraph.text.style!.fontSize!;
     expect(paragraph.size.height, lessThan(fontSize * 2));
+  });
+
+  testWidgets('divider closes the header at the content header height', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_wrap());
+
+    // 品牌栏高度 = 页头高度 + 1px 分隔线，分隔线因此与内容区页头的下沿齐平。
+    expect(
+      tester.getSize(find.byType(HomeBrandHeader)).height,
+      DesktopWindowFrame.titleBarHeight + RevericSizes.dividerThickness,
+    );
+
+    final divider = tester.widget<Divider>(find.byType(Divider));
+    expect(divider.height, RevericSizes.dividerThickness);
+    // 与内容区页头同色：同一条水平线跨过侧栏与内容区不能出现色差。
+    expect(divider.color, RevericThemeData.reveric.colors.border);
   });
 }

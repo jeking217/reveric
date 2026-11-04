@@ -14,10 +14,14 @@ import '../../../shared/app_config.dart';
 import '../../../shared/theme/theme.dart';
 import '../../widgets/desktop_window_frame.dart';
 
-/// 侧栏顶部的品牌栏：logo 与产品名并排，占用标题栏覆盖区。
+/// 侧栏顶部的品牌栏：logo 与产品名并排，占满标题栏高度，底部一条极浅的分隔线。
 ///
 /// 只做展示，不拦截窗口拖拽热区。产品名恒定单行：宽度不够时省略，
 /// 绝不折成两行把标题栏撑高。
+///
+/// 分隔线紧跟标题栏高度之后（y = [DesktopWindowFrame.titleBarHeight]），
+/// 与内容区页头（同样 48px 高）下方的分隔线处在同一水平线、同一颜色，
+/// 跨过侧栏与内容区之间的竖线时是一条连续的线。
 class HomeBrandHeader extends StatelessWidget {
   const HomeBrandHeader({super.key});
 
@@ -29,29 +33,36 @@ class HomeBrandHeader extends StatelessWidget {
     final colors = RevericTheme.colorsOf(context);
     final typo = RevericTheme.typographyOf(context);
 
-    return SizedBox(
-      height: DesktopWindowFrame.sidebarTopInset,
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: DesktopWindowFrame.sidebarLeadingInset + RevericSpacing.x2l,
-          right: RevericSpacing.lg,
-        ),
-        child: Row(
-          children: [
-            const _BrandMark(size: markSize),
-            const SizedBox(width: RevericSpacing.sm),
-            Expanded(
-              child: Text(
-                appDisplayName,
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                style: typo.uiSemibold.copyWith(color: colors.textPrimary),
-              ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: DesktopWindowFrame.sidebarTopInset,
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: DesktopWindowFrame.sidebarLeadingInset + RevericSpacing.x2l,
+              right: RevericSpacing.lg,
             ),
-          ],
+            child: Row(
+              children: [
+                const _BrandMark(size: markSize),
+                const SizedBox(width: RevericSpacing.sm),
+                Expanded(
+                  child: Text(
+                    appDisplayName,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: typo.uiSemibold.copyWith(color: colors.textPrimary),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+        Divider(height: RevericSizes.dividerThickness, color: colors.border),
+      ],
     );
   }
 }
