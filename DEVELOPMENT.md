@@ -248,3 +248,70 @@ python3 -m unittest discover -s third/fjs/tool -p artifact_test.py
 ## 贡献
 
 提交 Pull Request（PR）前，请阅读 [贡献者许可协议（CLA）](CLA.md)。提交 PR 即表示同意该协议，允许维护者将你的贡献用于商业闭源版本及再许可；你保留贡献的版权。
+
+## 附录：本地源码运行速查
+
+上面的章节按平台拆分了环境细节，这里把「拉下源码到界面跑起来」压成一条最短路径。命令均在仓库根目录执行，Flutter 一律走 `fvm flutter`。
+
+### Windows（本地 Windows x64 + VS 2022 Build Tools 实测通过）
+
+```powershell
+git clone https://github.com/looplj/reveric.git
+cd reveric
+
+fvm install --skip-pub-get
+fvm use --skip-pub-get
+rustup toolchain install 1.99.1 --profile default
+rustup target add --toolchain 1.99.1 x86_64-pc-windows-msvc
+fvm flutter pub get
+
+# 首次构建、或执行过 fvm flutter clean / make clean 之后需要准备深度估计运行时
+.\third\depth-native\prepare-product-windows.ps1
+
+# 启动调试（首次会编译原生部分，耗时较长；之后走增量）
+fvm flutter run -d windows
+```
+
+启动成功后终端会输出 `Flutter run key commands`，同时弹出应用窗口并出现 `reveric.exe` 进程。交互键：`r` 热重载、`R` 热重启、`q` 退出。
+
+项目通过 `pubspec.yaml` 的 path 依赖引用 `third/` 下的本地包（如 `window_manager`），`pub get` 会一并解析，不需要单独安装或替换成同名的公开包。`lib/**/*.g.dart` 生成文件已入库，**日常运行不需要先跑代码生成**；只有改动了 Riverpod Provider、Drift 表结构或 JSON 序列化注解之后，才执行 `make codegen`（没有 make 时用 `fvm flutter pub run build_runner build --delete-conflicting-outputs`）。
+
+### macOS / Android
+
+macOS 需要先准备 Xcode 与 CPU 运行时，再 `make run-macos`；Android 需要 arm64 设备或模拟器，再 `fvm flutter run -d <device-id>`。前置条件和多切片 Rust target 见上文 [macOS](#macos) 与 [Android](#android) 章节。
+
+### 只跑构建产物、不挂调试器
+
+```powershell
+fvm flutter build windows --debug     # 产物：build\windows\x64\runner\Debug\reveric.exe
+fvm flutter build windows --release   # 产物：build\windows\x64\runner\Release\reveric.exe
+```
+
+`build\windows\x64\runner\<模式>\` 目录需要整体分发，直接拷 exe 会因缺少 DLL 与 `data\` 启动失败。
+
+### 本仓库实测结果
+
+| 命令 | 结果 |
+| --- | --- |
+| `fvm flutter --version` | Flutter `3.50.0-0.3.pre`（commit `0b771a58`），Dart `3.14.0` |
+| `fvm flutter pub get` | 依赖解析成功，`window_manager` 等以 path override 引入 |
+| `fvm flutter analyze` | 0 error / 0 warning（其余为既有风格提示） |
+| `fvm flutter build windows --debug` | 成功，约 4~5 分钟（含原生插件编译） |
+| `fvm flutter run -d windows` | 成功，约 2 分钟起窗（复用已有 Debug 产物时更快） |
+
+### 测试前先处理代理
+
+本机设置了 `HTTP_PROXY`/`HTTPS_PROXY` 时，`flutter_tester` 与测试进程之间的本地 WebSocket 会被代理拦截，表现为整批测试在加载阶段就报 `Invalid WebSocket upgrade request`。跑测试前清掉代理并放行回环地址：
+
+```sh
+unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
+export NO_PROXY=localhost,127.0.0.1,::1
+fvm flutter test
+```
+
+### 运行相关常见问题
+
+- **Widget 测试整文件报缺少 `InternalFlutterWindows_WindowManager_Initialize`**：这是当前固定 Flutter 版本在 Windows 上运行 widget 测试时的框架侧限制（原生窗口管理符号未随 `flutter_tester` 提供），与本仓库代码无关。受影响的是 `testWidgets` 用例，纯 Dart 单元测试不受影响；需要完整跑 widget 测试时请在 CI 或 macOS 上执行。
+- **`flutter pub get` 卡住或超时**：Flutter 资源下载走 `FLUTTER_STORAGE_BASE_URL`，国内网络可设置镜像后重试，例如 `https://storage.flutter-io.cn`。
+- **启动后窗口空白或提示未配置模型**：应用不内置 API Key，需在「设置 ➔ 模型设置」中自行添加供应商并测试连通；作品数据全部存本地（SQLite 与工程文件夹）。
+- **首次 `prepare-product-windows.ps1` 很慢**：该脚本会下载并裁剪 ONNX Runtime，只在首次以及清理 `build/` 后需要重跑，日常改代码不必重复执行。
