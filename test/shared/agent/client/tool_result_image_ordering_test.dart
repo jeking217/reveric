@@ -58,7 +58,7 @@ void main() {
     ]);
 
     final roles = wire.map((m) => m.role).toList();
-    expect(roles, ['user', 'assistant', 'tool', 'tool', 'user']);
+    expect(roles, ['user', 'assistant', 'tool', 'tool', 'user', 'user']);
 
     final toolIds = wire
         .where((m) => m.role == 'tool')
@@ -66,15 +66,19 @@ void main() {
         .toList();
     expect(toolIds, ['c1', 'c2']);
 
-    // 图片只出现在工具轮结束后的那条 user 消息里。
-    final imageCarrier = wire.last.toJson();
-    expect(imageCarrier['role'], 'user');
-    final parts = imageCarrier['content'] as List<dynamic>;
-    final imageParts = parts
-        .whereType<Map>()
-        .where((p) => p['type'] == 'image_url')
-        .toList();
-    expect(imageParts, hasLength(2));
+    // 图片只出现在工具轮结束之后：每个工具结果各补一条 user 消息，
+    // tool 消息之间不再夹杂 user 消息。
+    final trailing = wire.skip(wire.length - 2).toList();
+    final imagesPerMessage = <int>[];
+    for (final message in trailing) {
+      final json = message.toJson();
+      expect(json['role'], 'user');
+      final parts = json['content'] as List<dynamic>;
+      imagesPerMessage.add(
+        parts.whereType<Map>().where((p) => p['type'] == 'image_url').length,
+      );
+    }
+    expect(imagesPerMessage, [1, 1]);
   });
 
   test('image-only result still keeps a single tool message per call', () {

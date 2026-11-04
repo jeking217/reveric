@@ -375,23 +375,28 @@ class OpenAiClient implements ProviderClient {
 
   /// 把 agent 上下文转成 wire 消息。
   ///
-  /// 工具结果携带的图片统一攒到**整个工具轮结束后**补一条 user 消息，保证
+  /// 工具结果携带的图片统一攒到**整个工具轮结束后**再补 user 消息，保证
   /// assistant(tool_calls) 之后紧跟的是完整连续的 tool 消息 —— 并行工具调用
   /// 时逐条插图片会被 OpenAI 兼容网关判为 insufficient tool messages。
+  ///
+  /// 图片按来源工具结果分组：一个工具结果的图片补一条 user 消息，既维持
+  /// tool 消息的连续性，也保留图片与对应工具结果的一一对应关系。
   @visibleForTesting
   List<openai.ChatMessage> convertMessages(List<AgentMessage> messages) {
     preflightProviderHistory(messages, ProviderHistoryPolicy.openAiChat);
     final out = <openai.ChatMessage>[];
-    final pendingImages = <openai.ContentPart>[];
+    final pendingImageGroups = <List<openai.ContentPart>>[];
     void flushImages() {
-      if (pendingImages.isEmpty) return;
-      out.add(
-        openai.ChatMessage.user([
-          openai.ContentPart.text('Tool result image(s):'),
-          ...pendingImages,
-        ]),
-      );
-      pendingImages.clear();
+      if (pendingImageGroups.isEmpty) return;
+      for (final images in pendingImageGroups) {
+        out.add(
+          openai.ChatMessage.user([
+            openai.ContentPart.text('Tool result image(s):'),
+            ...images,
+          ]),
+        );
+      }
+      pendingImageGroups.clear();
     }
 
     for (final msg in messages) {
@@ -399,7 +404,9 @@ class OpenAiClient implements ProviderClient {
       if (msg.type != AgentMessageType.tool_result) flushImages();
       final converted = _convertOne(msg);
       out.addAll(converted.messages);
-      pendingImages.addAll(converted.images);
+      if (converted.images.isNotEmpty) {
+        pendingImageGroups.add(converted.images);
+      }
     }
     flushImages();
     return out;
