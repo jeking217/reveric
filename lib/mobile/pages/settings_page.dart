@@ -1,7 +1,8 @@
-// 职责: 移动端设置页面 — 顶部用户资料卡 + 分组列表（偏好/AI/数据/系统，行右侧显示当前值），路由到共享 section；含 10 次点击关于解锁调试。
+// 职责: 移动端设置页面 — 顶部用户资料卡 + 分组列表（偏好/AI/数据/社区/系统，行右侧显示当前值），路由到共享 section；含 10 次点击关于解锁调试。
 // 关联文件:
 //   lib/shared/components/reveric_dialog.dart
 //   lib/shared/widgets/user_profile_edit_dialog.dart
+//   lib/shared/widgets/community_links.dart
 //   lib/shared/utils/storage_paths.dart
 //   lib/shared/widgets/settings/general_settings_section.dart
 //   lib/shared/widgets/settings/appearance_settings_section.dart
@@ -29,8 +30,9 @@
 
 import '../../shared/widgets/settings/mcp/section.dart';
 import '../../shared/widgets/settings/plugins/section.dart';
+import '../../shared/widgets/community_links.dart';
+import '../../shared/widgets/user_avatar.dart';
 import '../../shared/widgets/user_profile_edit_dialog.dart';
-import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -58,6 +60,7 @@ import '../../shared/widgets/settings/backup_settings_section.dart';
 import '../../shared/widgets/settings/usage_settings_section.dart';
 import '../../shared/widgets/settings/usage_view.dart';
 import '../../shared/components/reveric_dialog.dart';
+import '../../shared/components/reveric_icon_button.dart';
 
 /// 从更新提醒直达现有关于详情页。
 Future<void> showMobileAboutPage(BuildContext context) {
@@ -68,7 +71,15 @@ Future<void> showMobileAboutPage(BuildContext context) {
   );
 }
 
-/// 从首页资料入口打开现有账户详情页。
+/// 打开移动端已有设置分区；不增加隐藏的桌面入口或调试入口。
+Future<void> showMobileSettingsPage(BuildContext context, String section) {
+  final item = SettingsPage._navigableItems.firstWhere(
+    (item) => item.id == section,
+  );
+  return Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(builder: (_) => _SettingsDetailPage(item: item)),
+  );
+}
 
 /// 设置页面导航项
 class _SettingsNavItem {
@@ -158,6 +169,24 @@ class SettingsPage extends HookConsumerWidget {
     labelKey: LocaleKeys.settingsAbout,
     icon: RevericIcons.help_outline,
   );
+  static const _navigableItems = [
+    _generalItem,
+    _appearanceItem,
+    _editorItem,
+    _readingItem,
+    _providersItem,
+    _aiAgentsItem,
+    _usageItem,
+    _mcpItem,
+    _pluginsItem,
+    _backupItem,
+    _aboutItem,
+  ];
+
+  static Set<String> get navigableSections => {
+    for (final item in _navigableItems) item.id,
+  };
+
   static const _debugNavItem = _SettingsNavItem(
     id: 'debug',
     labelKey: LocaleKeys.settingsDebug,
@@ -377,6 +406,38 @@ class SettingsPage extends HookConsumerWidget {
               ),
             ]),
             const SizedBox(height: RevericSpacing.x2l),
+            _buildGroup(
+              context,
+              colors,
+              typo,
+              LocaleKeys.settingsGroupCommunity,
+              [
+                _valueRow(
+                  context,
+                  colors,
+                  typo,
+                  icon: RevericIcons.qq_logo,
+                  tint: colors.accentAmber,
+                  label: context.t(LocaleKeys.settingsAboutJoinQqGroup),
+                  trailing: RevericIconButton(
+                    icon: RevericIcons.copy,
+                    tooltip: context.t(LocaleKeys.commonCopy),
+                    onPressed: () => copyQqGroupNumber(context),
+                  ),
+                  onTap: () => openQqGroup(context),
+                ),
+                _valueRow(
+                  context,
+                  colors,
+                  typo,
+                  icon: RevericIcons.github_logo,
+                  tint: colors.textSecondary,
+                  label: context.t(LocaleKeys.settingsAboutGithubRepository),
+                  onTap: () => openGitHubRepo(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: RevericSpacing.x2l),
             _buildGroup(context, colors, typo, LocaleKeys.settingsGroupSystem, [
               _valueRow(
                 context,
@@ -442,33 +503,10 @@ class SettingsPage extends HookConsumerWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: avatarSize,
-                height: avatarSize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colors.surfaceContainer,
-                ),
-                child: ClipOval(
-                  child: resolvedAvatar != null
-                      ? Image.file(
-                          File(resolvedAvatar),
-                          width: avatarSize,
-                          height: avatarSize,
-                          fit: BoxFit.cover,
-                          cacheWidth: (avatarSize * 2).toInt(),
-                          errorBuilder: (_, _, _) => RevericIcon(
-                            RevericIcons.person,
-                            size: 24,
-                            color: colors.textMuted,
-                          ),
-                        )
-                      : RevericIcon(
-                          RevericIcons.person,
-                          size: 24,
-                          color: colors.textMuted,
-                        ),
-                ),
+              UserAvatar(
+                username: displayName,
+                imagePath: resolvedAvatar,
+                size: avatarSize,
               ),
               const SizedBox(width: RevericSpacing.lg),
               Expanded(

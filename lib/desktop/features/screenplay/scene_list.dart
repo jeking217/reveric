@@ -223,13 +223,6 @@ class _ScreenplaySceneListRowState extends State<ScreenplaySceneListRow> {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         ScreenplayStageBadge(stage: scene.stage),
-                        if (widget.entry.beatTitle case final beatTitle?)
-                          ScreenplayChip(
-                            icon: RevericIcons.alt_route_outlined,
-                            label: beatTitle.trim().isEmpty
-                                ? context.t(LocaleKeys.screenplayUntitledBeat)
-                                : beatTitle,
-                          ),
                         ScreenplayChip(
                           icon: RevericIcons.clock,
                           label:
@@ -319,7 +312,7 @@ class _SceneListRowMenu extends StatelessWidget {
           position: box.localToGlobal(Offset(0, box.size.height)),
           entries: [
             RevericMenuItem(
-              label: context.t(LocaleKeys.productionTitle),
+              label: context.t(LocaleKeys.storyboardBoard),
               onTap: onOpenStoryboard,
             ),
             RevericMenuItem(

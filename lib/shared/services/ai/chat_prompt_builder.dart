@@ -153,9 +153,8 @@ class ChatPromptBuilder {
       NovelWorkspaceSection.story_progress => '当前进展',
       NovelWorkspaceSection.screenplay_script => '正文',
       NovelWorkspaceSection.screenplay_outline => '大纲',
-      NovelWorkspaceSection.screenplay_beats => '节拍',
       NovelWorkspaceSection.screenplay_scenes => '场次',
-      NovelWorkspaceSection.storyboard => '制片',
+      NovelWorkspaceSection.storyboard => '视频',
       null => '工作区',
     };
   }
@@ -200,9 +199,8 @@ class ChatPromptBuilder {
       NovelWorkspaceSection.story_progress => '当前进展',
       NovelWorkspaceSection.screenplay_script => '正文',
       NovelWorkspaceSection.screenplay_outline => '大纲',
-      NovelWorkspaceSection.screenplay_beats => '节拍',
       NovelWorkspaceSection.screenplay_scenes => '场次',
-      NovelWorkspaceSection.storyboard => '制片',
+      NovelWorkspaceSection.storyboard => '视频',
     };
   }
 

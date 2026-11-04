@@ -27,7 +27,10 @@
 //   assets/translations/zh-CN/agent_studio.json
 //   assets/translations/en/editor.json
 //   assets/translations/zh-CN/editor.json
+//   assets/translations/en/settings.json
+//   assets/translations/zh-CN/settings.json
 //   lib/shared/widgets/unsaved_changes_dialog.dart
+//   lib/shared/widgets/settings/leave_guard.dart
 // 遵循的 Rules:
 //   .agents/rules/hooks.md
 import '../../shared/widgets/plugin_view/navigation.dart';
@@ -50,7 +53,6 @@ import '../../shared/models/novel_agent_skill.dart';
 import '../../shared/models/subagent.dart';
 import '../../shared/providers/ai_mode_processing.dart';
 import '../../shared/models/novel.dart';
-import '../../shared/models/novel_form_prefill.dart';
 import '../../shared/providers/novel_providers.dart';
 import '../../shared/providers/novel_agent_skill_providers.dart';
 import '../../shared/services/novel_import.dart';
@@ -60,22 +62,28 @@ import '../../shared/theme/theme.dart';
 import '../../shared/logger/app_logger.dart';
 import '../../shared/widgets/app_background.dart';
 import '../../shared/widgets/confirm_dialog.dart';
+import '../../shared/widgets/settings/leave_guard.dart';
 import '../../shared/widgets/unsaved_changes_dialog.dart';
 import '../../shared/services/demo_novel.dart';
 import '../widgets/agent_management/ai_shortcut_action_edit_panel.dart';
 import '../widgets/agent_management/agent_model_settings_page.dart';
+import '../widgets/agent_management/ai_assistant_page.dart';
+import '../widgets/agent_management/ai_providers_page.dart';
+import '../widgets/agent_management/mcp_page.dart';
 import '../widgets/agent_management/expert_team_page.dart';
 import '../features/agent_skills/setup_panel.dart';
 import '../features/agent_skills/setup_edit_panel.dart';
 import '../features/agent_skills/skill_revision_history_dialog.dart';
 import '../widgets/desktop_window_frame.dart';
 import '../widgets/desktop_save_shortcut.dart';
+import '../widgets/novel_create_submitter.dart';
 import '../widgets/novel_form_dialog.dart';
 import '../widgets/novel_import_dialog.dart';
 import '../widgets/home/library_home_panel.dart';
 import '../widgets/settings/settings_dialog.dart';
 import '../widgets/agent_management/subagent_edit_panel.dart';
 import '../widgets/agent_management/subagent_prompt_edit_panel.dart';
+import '../widgets/community_row.dart';
 import '../widgets/user_profile_bar.dart';
 import '../widgets/update_entry.dart';
 import 'home_management_lists.dart';
@@ -123,6 +131,18 @@ final class _HomeAgentModelSettingsSelection extends _HomeContentSelection {
 
 final class _HomeExpertTeamSelection extends _HomeContentSelection {
   const _HomeExpertTeamSelection();
+}
+
+final class _HomeAiProvidersSelection extends _HomeContentSelection {
+  const _HomeAiProvidersSelection();
+}
+
+final class _HomeAiAssistantSelection extends _HomeContentSelection {
+  const _HomeAiAssistantSelection();
+}
+
+final class _HomeMcpSelection extends _HomeContentSelection {
+  const _HomeMcpSelection();
 }
 
 final class _HomeSkillListSelection extends _HomeContentSelection {
@@ -264,91 +284,10 @@ class NovelHomePage extends HookConsumerWidget {
     final activeAgentPanelHasChanges = useRef<bool Function()?>(null);
     final activeAgentPanelIsBlankCreateDraft = useRef<bool Function()?>(null);
     final pluginPageHasChanges = useRef<bool Function()?>(null);
+    // 供应商草稿、MCP 编辑表单沿用设置区的离开守卫，切换侧栏前由它们自行询问。
+    final settingsLeave = useMemoized(SettingsLeaveController.new);
     final sessionsExpanded = _homeSessionsExpanded;
     useListenable(sessionsExpanded);
-    Future<bool> createNovel({
-      required BuildContext feedbackContext,
-      required String title,
-      required String authorName,
-      required String description,
-      required String category,
-      required String type,
-      required String contentKind,
-      required int? plannedEpisodeCount,
-      required String? sourceNovelId,
-      required String? coverSourcePath,
-      required bool removeCover,
-      required List<String> tags,
-    }) async {
-      final actions = ref.read(novelActionsProvider);
-      final messenger = ScaffoldMessenger.of(feedbackContext);
-      final navigator = Navigator.of(context);
-
-      try {
-        final novelId = await actions.createNovel(
-          title: title,
-          authorName: authorName,
-          description: description,
-          category: category,
-          type: type,
-          contentKind: contentKind,
-          plannedEpisodeCount: plannedEpisodeCount,
-          sourceNovelId: sourceNovelId,
-          coverSourcePath: coverSourcePath,
-          tags: tags,
-        );
-
-        if (!context.mounted) {
-          return true;
-        }
-        novelSerial.value += 1;
-        // Pop the dialog before pushing a new route, otherwise
-        // handleSubmit's Navigator.of(context).pop() would pop
-        // NovelEditorPage instead of the dialog.
-        if (context.mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
-        }
-        if (context.mounted) {
-          navigator.push(
-            MaterialPageRoute(
-              builder: (_) => WorkspaceEditorPage(
-                novelId: novelId,
-                openChatOnEntry: contentKind == contentKindNovel,
-              ),
-            ),
-          );
-        }
-        return true;
-      } on NovelTitleConflictException catch (error) {
-        _log.error('createNovel title conflict', error: error);
-        if (!feedbackContext.mounted) {
-          return false;
-        }
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              context.t(
-                LocaleKeys.libraryDuplicateName,
-                namedArgs: {'name': error.title},
-              ),
-            ),
-          ),
-        );
-        return false;
-      } catch (error) {
-        _log.error('caught error=$error', error: error);
-        if (!feedbackContext.mounted) {
-          return false;
-        }
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(context.t(LocaleKeys.libraryCreateNovelFailed)),
-          ),
-        );
-        return false;
-      }
-    }
-
     // 快速开书：占位建书后直接进编辑器，其余设定交给创作向导 onboarding。
     // 从首页顶栏直接触发（无对话框可关），故不做 dialog pop。
     Future<void> quickStartNovel() async {
@@ -511,10 +450,7 @@ class NovelHomePage extends HookConsumerWidget {
       );
     }
 
-    void openCreateNovelDialog({
-      String initialContentKind = contentKindNovel,
-      NovelFormPrefill? prefill,
-    }) {
+    void openCreateNovelDialog({String initialContentKind = contentKindNovel}) {
       final novels = novelsAsync.maybeWhen(
         data: (list) => list,
         orElse: () => <Novel>[],
@@ -526,41 +462,17 @@ class NovelHomePage extends HookConsumerWidget {
         builder: (_) => DialogFeedback.scope(
           builder: (dialogContext) => NovelFormDialog.create(
             initialContentKind: initialContentKind,
-            prefill: prefill,
-            onSubmit:
-                ({
-                  required title,
-                  required authorName,
-                  required description,
-                  required category,
-                  required type,
-                  required contentKind,
-                  required plannedEpisodeCount,
-                  required sourceNovelId,
-                  required coverSourcePath,
-                  required removeCover,
-                  required tags,
-                }) => createNovel(
-                  feedbackContext: dialogContext,
-                  title: title,
-                  authorName: authorName,
-                  description: description,
-                  category: category,
-                  type: type,
-                  contentKind: contentKind,
-                  plannedEpisodeCount: plannedEpisodeCount,
-                  sourceNovelId: sourceNovelId,
-                  coverSourcePath: coverSourcePath,
-                  removeCover: removeCover,
-                  tags: tags,
-                ),
+            onSubmit: createWorkSubmitter(
+              context,
+              ref,
+              feedbackContext: dialogContext,
+            ),
             onQuickStart: () {
               // 先关表单对话框，再走占位建书 + 进编辑器。
               Navigator.of(context, rootNavigator: true).pop();
               quickStartNovel();
             },
-            // 改编入口已经带着原著信息进来，演示小说快捷按钮在这里没有意义。
-            onCreateDemoNovel: hasDemo || prefill != null
+            onCreateDemoNovel: hasDemo
                 ? null
                 : () => createDemoNovelWithNavigation(
                     context,
@@ -574,16 +486,7 @@ class NovelHomePage extends HookConsumerWidget {
 
     /// 从一本小说出发新建改编剧本：类型、来源与原著信息预填，其余交给用户确认。
     void adaptNovel(Novel novel) {
-      openCreateNovelDialog(
-        initialContentKind: contentKindScreenplay,
-        prefill: NovelFormPrefill.adaptationOf(
-          novel,
-          title: context.t(
-            LocaleKeys.libraryAdaptationTitle,
-            namedArgs: {'title': novel.title},
-          ),
-        ),
-      );
+      showNovelAdaptationDialog(context, ref, novel);
     }
 
     Future<void> openImportNovelDialog() async {
@@ -608,9 +511,11 @@ class NovelHomePage extends HookConsumerWidget {
           if (!context.mounted) {
             return;
           }
+          // 提示里带了章节标题的格式要求，多留些时间读完。
           messenger.showSnackBar(
             SnackBar(
               content: Text(context.t(LocaleKeys.libraryImportTxtEmpty)),
+              duration: const Duration(seconds: 8),
             ),
           );
           return;
@@ -640,6 +545,8 @@ class NovelHomePage extends HookConsumerWidget {
                 required category,
                 required type,
                 required tags,
+                required adaptationTitle,
+                required plannedEpisodeCount,
               }) {
                 return importService.importTxt(
                   filePath: filePath,
@@ -648,6 +555,8 @@ class NovelHomePage extends HookConsumerWidget {
                   category: category,
                   type: type,
                   tags: tags,
+                  adaptationTitle: adaptationTitle,
+                  plannedEpisodeCount: plannedEpisodeCount,
                 );
               },
         ),
@@ -668,9 +577,13 @@ class NovelHomePage extends HookConsumerWidget {
           ),
         ),
       );
+
       navigator.push(
         MaterialPageRoute(
-          builder: (_) => WorkspaceEditorPage(novelId: importResult.novelId),
+          builder: (_) => WorkspaceEditorPage(
+            novelId: importResult.screenplayId ?? importResult.novelId,
+            openChatOnEntry: true,
+          ),
         ),
       );
     }
@@ -714,6 +627,9 @@ class NovelHomePage extends HookConsumerWidget {
         ) =>
           true,
         (_HomeExpertTeamSelection(), _HomeExpertTeamSelection()) => true,
+        (_HomeAiProvidersSelection(), _HomeAiProvidersSelection()) => true,
+        (_HomeAiAssistantSelection(), _HomeAiAssistantSelection()) => true,
+        (_HomeMcpSelection(), _HomeMcpSelection()) => true,
         (_HomeSkillListSelection(), _HomeSkillListSelection()) => true,
         (
           _HomeGlobalSkillSelection(skill: final currentSkill),
@@ -787,6 +703,9 @@ class NovelHomePage extends HookConsumerWidget {
 
     /// 返回 true 表示「拦截」（不允许离开）；false 表示放行。
     Future<bool> guardUnsavedChanges() async {
+      if (!await settingsLeave.confirmLeave()) {
+        return true;
+      }
       if (isBlankCreateDraftSelection()) {
         clearActiveAgentHasChanges();
         return false;
@@ -921,6 +840,18 @@ class NovelHomePage extends HookConsumerWidget {
         onEditPrompt: (agent) {
           selectContent(_HomeSubAgentPromptSelection(agent));
         },
+      ),
+      _HomeAiProvidersSelection() => AiProvidersPage(
+        headerGestureExclusionKey: editPanelHeaderKey,
+        headerTrailingInset: DesktopWindowFrame.trailingInset,
+      ),
+      _HomeAiAssistantSelection() => AiAssistantPage(
+        headerGestureExclusionKey: editPanelHeaderKey,
+        headerTrailingInset: DesktopWindowFrame.trailingInset,
+      ),
+      _HomeMcpSelection() => McpPage(
+        headerGestureExclusionKey: editPanelHeaderKey,
+        headerTrailingInset: DesktopWindowFrame.trailingInset,
       ),
       _HomeExpertTeamSelection() => AgentExpertTeamPage(
         headerGestureExclusionKey: editPanelHeaderKey,
@@ -1063,7 +994,12 @@ class NovelHomePage extends HookConsumerWidget {
                 width: RevericSizes.dividerThickness,
                 color: colors.border,
               ),
-              Expanded(child: mainContent),
+              Expanded(
+                child: SettingsLeaveScope(
+                  controller: settingsLeave,
+                  child: mainContent,
+                ),
+              ),
             ],
           ),
         ),
@@ -1142,10 +1078,19 @@ class NovelHomePage extends HookConsumerWidget {
                   },
                 ),
                 const SizedBox(height: RevericSpacing.md),
-                // Section 3: AI
+                // Section 2: 模型
                 _buildSectionGroupHeader(
                   context,
-                  title: context.t(LocaleKeys.homeSectionAi),
+                  title: context.t(LocaleKeys.homeSectionModel),
+                ),
+                _buildLeafNavItem(
+                  context,
+                  icon: RevericIcons.hub_outlined,
+                  title: context.t(LocaleKeys.settingsProviders),
+                  isSelected: selection is _HomeAiProvidersSelection,
+                  onTap: () {
+                    onContentSelected(const _HomeAiProvidersSelection());
+                  },
                 ),
                 _buildLeafNavItem(
                   context,
@@ -1154,6 +1099,21 @@ class NovelHomePage extends HookConsumerWidget {
                   isSelected: modelSettingsSelected,
                   onTap: () {
                     onContentSelected(const _HomeAgentModelSettingsSelection());
+                  },
+                ),
+                const SizedBox(height: RevericSpacing.md),
+                // Section 3: 智能体
+                _buildSectionGroupHeader(
+                  context,
+                  title: context.t(LocaleKeys.homeSectionAgent),
+                ),
+                _buildLeafNavItem(
+                  context,
+                  icon: RevericIcons.smart_toy_outlined,
+                  title: context.t(LocaleKeys.settingsAiAgents),
+                  isSelected: selection is _HomeAiAssistantSelection,
+                  onTap: () {
+                    onContentSelected(const _HomeAiAssistantSelection());
                   },
                 ),
                 _buildLeafNavItem(
@@ -1176,6 +1136,21 @@ class NovelHomePage extends HookConsumerWidget {
                 ),
                 _buildLeafNavItem(
                   context,
+                  icon: RevericIcons.hub_outlined,
+                  title: context.t(LocaleKeys.settingsMcp),
+                  isSelected: selection is _HomeMcpSelection,
+                  onTap: () {
+                    onContentSelected(const _HomeMcpSelection());
+                  },
+                ),
+                const SizedBox(height: RevericSpacing.md),
+                // Section 4: 对话
+                _buildSectionGroupHeader(
+                  context,
+                  title: context.t(LocaleKeys.homeSectionChat),
+                ),
+                _buildLeafNavItem(
+                  context,
                   icon: RevericIcons.rocket_launch_outlined,
                   title: context.t(LocaleKeys.agentShortcutTitle),
                   isSelected: shortcutsSelected,
@@ -1183,7 +1158,7 @@ class NovelHomePage extends HookConsumerWidget {
                     onContentSelected(const _HomeShortcutActionListSelection());
                   },
                 ),
-                // 最近对话（AI section 末尾）
+                // 最近对话（对话 section 末尾）
                 if (recentSessions.isNotEmpty) ...[
                   _buildCollapsibleSectionHeader(
                     context,
@@ -1221,7 +1196,7 @@ class NovelHomePage extends HookConsumerWidget {
                     ),
                   ],
                 ],
-                // 插件页面：放在 AI 分区（含最近对话）之后，避免最近对话被归入插件。
+                // 插件页面：放在对话分区（含最近对话）之后，避免最近对话被归入插件。
                 PluginPageNavigation(
                   builder: (context, views) => Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1249,7 +1224,7 @@ class NovelHomePage extends HookConsumerWidget {
                     ],
                   ),
                 ),
-                // Section 4: 设置
+                // Section 5: 设置
                 const SizedBox(height: RevericSpacing.md),
                 _buildSectionGroupHeader(
                   context,
@@ -1265,6 +1240,16 @@ class NovelHomePage extends HookConsumerWidget {
             ),
           ),
           const DesktopUpdateEntry(),
+          Divider(height: 1, thickness: 1, color: colors.border),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
+              RevericSpacing.x2l,
+              RevericSpacing.md,
+              RevericSpacing.x2l,
+              0,
+            ),
+            child: CommunityRow(),
+          ),
           const UserProfileBar(),
         ],
       ),

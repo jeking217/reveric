@@ -114,10 +114,6 @@ class AiProviderInitializer {
         );
       case AiProviderType.metaso:
         throw UnsupportedError('METASO supports video generation only');
-      case AiProviderType.minimax:
-        throw UnsupportedError(
-          'MiniMax is configured for video generation only',
-        );
       case AiProviderType.codex:
         return CodexClient(
           model: _chatModel,
@@ -127,6 +123,7 @@ class AiProviderInitializer {
           streamHttpClientFactory: _createStreamHttpClient,
         );
       case AiProviderType.api88:
+      case AiProviderType.ooki:
         return NewApiClient(_config).chat(
           cacheKeyUserId: _cacheKeyUserId,
           model: _chatModel,
@@ -163,6 +160,15 @@ class AiProviderInitializer {
           useOpenRouter: _config.typeEnum == AiProviderType.openrouter,
           useThinkingField: useThinkingField(_chatModel),
           useEnableThinkingField: _config.typeEnum == AiProviderType.qwen,
+        );
+      case AiProviderType.minimax:
+        return AnthropicClient(
+          apiKey: _config.effectiveApiKey,
+          baseUrl: minimaxAnthropicBaseUrl(_config.effectiveBaseUrl),
+          model: _chatModel,
+          httpClient: _httpClient,
+          streamHttpClientFactory: _createStreamHttpClient,
+          traceHeadersProvider: _traceHeadersProvider,
         );
       case AiProviderType.anthropic:
         return AnthropicClient(

@@ -83,7 +83,6 @@ dist/
 *.keystore
 *.jks
 
-# 商业授权介绍材料，仅本地保留
 designs/pitch/
 
 # Android/打包工具链在本地生成的中间产物
@@ -96,3 +95,9 @@ designs/pitch/
 
 # Windows 保留设备名，重定向误产生的空文件
 /nul
+
+# 官网构建与截图产物
+site/screenshots/
+
+.wrangler/
+site/.cache/

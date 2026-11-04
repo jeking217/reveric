@@ -4,8 +4,6 @@
 //   lib/shared/widgets/settings/appearance_settings_section.dart
 //   lib/shared/widgets/settings/editor_settings_section.dart
 //   lib/shared/widgets/settings/reading_settings_section.dart
-//   lib/shared/widgets/settings/ai_agents_settings_section.dart
-//   lib/shared/widgets/settings/ai_providers_section.dart
 //   lib/shared/widgets/settings/usage_settings_section.dart
 //   lib/shared/widgets/settings/about_settings_section.dart
 //   lib/shared/widgets/settings/debug_settings_section.dart
@@ -20,7 +18,6 @@
 // 遵循的 Rules:
 //   .agents/rules/hooks.md
 //   .agents/rules/directory-structure.md
-import 'settings_mcp_section.dart';
 import 'settings_plugins_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -32,8 +29,6 @@ import '../../../shared/localization/locale_keys.dart';
 import '../../../shared/providers/settings_providers.dart';
 import '../../../shared/theme/theme.dart';
 import '../../../shared/widgets/settings/about_settings_section.dart';
-import '../../../shared/widgets/settings/ai_agents_settings_section.dart';
-import '../../../shared/widgets/settings/ai_providers_section.dart';
 import '../../../shared/widgets/settings/appearance_settings_section.dart';
 import '../../../shared/widgets/settings/debug_settings_section.dart';
 import '../../../shared/widgets/settings/editor_settings_section.dart';
@@ -49,8 +44,6 @@ import 'settings_storage_section.dart';
 
 part 'settings_general_section.dart';
 part 'settings_appearance_section.dart';
-part 'settings_ai_providers_section.dart';
-part 'settings_ai_agents_section.dart';
 part 'settings_remote_section.dart';
 part 'settings_usage_section.dart';
 part 'settings_editor_section.dart';
@@ -58,14 +51,6 @@ part 'settings_reading_section.dart';
 part 'settings_backup_section.dart';
 part 'settings_about_section.dart';
 part 'settings_debug_section.dart';
-
-/// 打开设置对话框并定位到「AI 供应商」页 — 没有可用模型时的配置入口。
-Future<void> showAiProviderSettingsDialog(BuildContext context) {
-  return showDialog<void>(
-    context: context,
-    builder: (_) => const SettingsDialog(initialNavId: 'providers'),
-  );
-}
 
 /// 打开设置对话框并定位到「套餐」页 — 各功能门禁升级引导的统一跳转目标。
 
@@ -115,24 +100,9 @@ class SettingsDialog extends HookConsumerWidget {
       icon: RevericIcons.book_open,
     ),
     _SettingsNavItem(
-      id: 'ai_agents',
-      labelKey: LocaleKeys.settingsAiAgents,
-      icon: RevericIcons.smart_toy_outlined,
-    ),
-    _SettingsNavItem(
-      id: 'providers',
-      labelKey: LocaleKeys.settingsProviders,
-      icon: RevericIcons.hub_outlined,
-    ),
-    _SettingsNavItem(
       id: 'usage',
       labelKey: LocaleKeys.settingsUsage,
       icon: RevericIcons.bar_chart_outlined,
-    ),
-    _SettingsNavItem(
-      id: 'mcp',
-      labelKey: LocaleKeys.settingsMcp,
-      icon: RevericIcons.hub_outlined,
     ),
     _SettingsNavItem(
       id: 'plugins',
@@ -160,6 +130,11 @@ class SettingsDialog extends HookConsumerWidget {
       icon: RevericIcons.help_outline,
     ),
   ];
+
+  /// Agent 导航只接受正常展示的分区，排除调试入口。
+  static Set<String> get navigableSections => {
+    for (final item in _baseNavItems) item.id,
+  };
 
   static const _debugNavItem = _SettingsNavItem(
     id: 'debug',
@@ -371,10 +346,14 @@ class SettingsDialog extends HookConsumerWidget {
                 color: isSelected ? colors.textPrimary : colors.textSecondary,
               ),
               const SizedBox(width: RevericSpacing.sm),
-              Text(
-                context.t(item.labelKey),
-                style: (isSelected ? typo.uiSemibold : typo.ui).copyWith(
-                  color: isSelected ? colors.textPrimary : colors.textSecondary,
+              Expanded(
+                child: Text(
+                  context.t(item.labelKey),
+                  style: (isSelected ? typo.uiSemibold : typo.ui).copyWith(
+                    color: isSelected
+                        ? colors.textPrimary
+                        : colors.textSecondary,
+                  ),
                 ),
               ),
             ],
@@ -392,10 +371,7 @@ class SettingsDialog extends HookConsumerWidget {
     return switch (selectedId) {
       'general' => const _GeneralSettingsSection(),
       'appearance' => const _AppearanceSettingsSection(),
-      'providers' => _AiProvidersSection(),
-      'ai_agents' => const _AiAgentSettingsSection(),
       'remote' => _RemoteSettingsSection(),
-      'mcp' => const McpDesktopSettingsSection(),
       'plugins' => const PluginsDesktopSettingsSection(),
       'usage' => _UsageSettingsSection(initialSessionId: initialUsageSessionId),
       'editor' => const _EditorSettingsSection(),

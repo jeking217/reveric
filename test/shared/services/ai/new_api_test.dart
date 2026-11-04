@@ -4,7 +4,6 @@
 //   lib/shared/services/ai/provider_initializer.dart
 //   lib/shared/models/new_api.dart
 import 'dart:convert';
-import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -17,6 +16,7 @@ import 'package:reveric/shared/models/video/channels.dart';
 import 'package:reveric/shared/services/ai/new_api.dart';
 import 'package:reveric/shared/services/ai/provider_initializer.dart';
 import 'package:reveric/shared/widgets/settings/provider_config_panel.dart';
+import 'package:reveric/shared/widgets/settings/providers/registry.dart';
 
 AiProvider _provider([String type = 'api88']) =>
     aiProviderBuiltinById('openai')!.copyWith(
@@ -37,11 +37,25 @@ http.Response _json(Object value) => http.Response(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('OOKiAPI is available only by manual creation without a showcase', () {
+    expect(customAiProviderTypes, contains(AiProviderType.ooki));
+    expect(aiProviderBuiltinById('ooki'), isNull);
+    expect(providerShowcases, isNot(contains('ooki')));
+  });
+  for (final (type, baseUrl) in [
+    ('api88', 'https://api.88api.ai/v1'),
+    ('ooki', 'https://api.ookiapi.com/v1'),
+  ]) {
+    group(type, () => _testProvider(type, baseUrl));
+  }
+}
+
+void _testProvider(String type, String baseUrl) {
   test(
-    '88API exposes four kinds while New API stays an internal integration',
+    'New API provider exposes four kinds while New API stays an internal integration',
     () {
-      expect(_provider().effectiveBaseUrl, 'https://api.88api.ai/v1');
-      expect(_provider().supportedModelKinds, {
+      expect(_provider(type).effectiveBaseUrl, baseUrl);
+      expect(_provider(type).supportedModelKinds, {
         AiModelKind.chat,
         AiModelKind.image,
         AiModelKind.audio,
@@ -59,7 +73,7 @@ void main() {
   test(
     'all registered media channel entries resolve to usable capabilities',
     () {
-      for (final type in ['api88']) {
+      for (final type in ['api88', 'ooki']) {
         for (final channel
             in imageChannelModels[ImageProtocol.new_api_images]!.values) {
           expect(channel.model, isNotNull);
@@ -84,23 +98,25 @@ void main() {
       var requests = 0;
       await http.runWithClient(
         () async {
-          expect(await fetchProviderModels(_provider()), ['deepseek-v4-flash']);
+          expect(await fetchProviderModels(_provider(type)), [
+            'deepseek-v4-flash',
+          ]);
           expect(
-            await fetchProviderModels(_provider(), kind: AiModelKind.image),
+            await fetchProviderModels(_provider(type), kind: AiModelKind.image),
             ['gemini-3.1-flash-image', 'gpt-image-2'],
           );
           expect(
-            await fetchProviderModels(_provider(), kind: AiModelKind.audio),
+            await fetchProviderModels(_provider(type), kind: AiModelKind.audio),
             ['gemini-3.1-flash-tts'],
           );
           expect(
-            await fetchProviderModels(_provider(), kind: AiModelKind.video),
+            await fetchProviderModels(_provider(type), kind: AiModelKind.video),
             ['seedance-2.0官方版', 'veo-3.1'],
           );
         },
         () => MockClient((request) async {
           requests++;
-          expect(request.url.toString(), 'https://api.88api.ai/v1/models');
+          expect(request.url.toString(), '$baseUrl/models');
           expect(request.headers['Authorization'], 'Bearer test-key');
           return _json({
             'data': [
@@ -131,21 +147,17 @@ void main() {
     ('my-writer', '/v1/chat/completions', NewApiChatProtocol.openai),
   ]) {
     test(
-      '$model uses advertised $protocol without rewriting model ID',
+      '$model uses $protocol without model discovery or rewriting model ID',
       () async {
         var calls = 0;
         final initializer = AiProviderInitializer(
-          config: _provider(),
+          config: _provider(type),
           chatModel: model,
           httpClient: MockClient((request) async {
             calls++;
-            if (request.method == 'GET') {
-              expect(request.url.path, '/v1/models');
-              return _json({
-                'data': [_model(model, _allChat)],
-              });
-            }
+            expect(request.method, 'POST');
             expect(request.url.path, path);
+            expect(request.url.host, Uri.parse(baseUrl).host);
             final body = jsonDecode(request.body) as Map;
             if (protocol != NewApiChatProtocol.gemini) {
               expect(body['model'], model);
@@ -219,47 +231,45 @@ void main() {
         );
         addTearDown(initializer.dispose);
         final client = await initializer.initialize();
+        expect(calls, 0);
         await client.chat(
           messages: [AgentMessage.user(id: 'user', content: 'hello')],
         );
         expect(await initializer.initialize(), same(client));
-        expect(calls, 2);
+        expect(calls, 1);
       },
     );
   }
 
   test(
-    'protocol selection uses metadata for aliases and restricted gateways',
+    'protocol selection follows model names including prefixes and aliases',
     () {
-      expect(
-        NewApiModel(id: 'renamed', endpointTypes: {'anthropic'}).chatProtocol,
-        NewApiChatProtocol.anthropic,
-      );
-      expect(
-        NewApiModel(
-          id: 'claude-sonnet-4-6',
-          endpointTypes: {'openai'},
-        ).chatProtocol,
-        NewApiChatProtocol.openai,
-      );
-      expect(
-        () => NewApiModel(id: 'missing', endpointTypes: {}).chatProtocol,
-        throwsUnsupportedError,
-      );
+      for (final (model, protocol) in [
+        ('vendor/CLAUDE-sonnet-4-6', NewApiChatProtocol.anthropic),
+        ('vendor/GEMINI-3.1-pro-preview', NewApiChatProtocol.gemini),
+        ('vendor/GPT-5.4', NewApiChatProtocol.responses),
+        ('o1', NewApiChatProtocol.responses),
+        ('o3-mini', NewApiChatProtocol.responses),
+        ('o4-mini', NewApiChatProtocol.responses),
+        ('renamed', NewApiChatProtocol.openai),
+        ('other-model', NewApiChatProtocol.openai),
+      ]) {
+        expect(NewApiChatProtocol.forModel(model), protocol, reason: model);
+      }
     },
   );
+
   test(
-    'concurrent initialization shares metadata request and disposal prevents resurrection',
+    'concurrent initialization shares client and disposal prevents resurrection without HTTP',
     () async {
-      final response = Completer<http.Response>();
       var calls = 0;
-      final transport = MockClient((_) {
+      final transport = MockClient((_) async {
         calls++;
-        return response.future;
+        throw StateError('Initialization must not make HTTP requests');
       });
       addTearDown(transport.close);
       final initializer = AiProviderInitializer(
-        config: _provider(),
+        config: _provider(type),
         chatModel: 'writer',
         httpClient: transport,
       );
@@ -268,40 +278,31 @@ void main() {
       final expectation = expectLater(first, throwsStateError);
       expect(second, same(first));
       initializer.dispose();
-      response.complete(
-        _json({
-          'data': [
-            _model('writer', ['openai']),
-          ],
-        }),
-      );
       await expectation;
-      expect(calls, 1);
+      expect(calls, 0);
       expect(initializer.isInitialized, false);
     },
   );
 
-  test(
-    'failed discovery never issues a generation request or hides diagnostics',
-    () async {
-      var calls = 0;
-      final transport = MockClient((request) async {
-        calls++;
-        expect(request.method, 'GET');
-        return http.Response('{"error":{"message":"invalid test-key"}}', 401);
-      });
-      await expectLater(
-        NewApiClient(_provider()).chat(model: 'writer', httpClient: transport),
-        throwsA(
-          isA<StateError>().having(
-            (e) => e.toString(),
-            'diagnostic',
-            allOf(contains('401'), isNot(contains('test-key'))),
-          ),
+  test('explicit model discovery preserves failure diagnostics', () async {
+    var calls = 0;
+    final transport = MockClient((request) async {
+      calls++;
+      expect(request.method, 'GET');
+      expect(request.url.path, '/v1/models');
+      return http.Response('{"error":{"message":"invalid test-key"}}', 401);
+    });
+    addTearDown(transport.close);
+    await expectLater(
+      NewApiClient(_provider(type)).models(httpClient: transport),
+      throwsA(
+        isA<StateError>().having(
+          (e) => e.toString(),
+          'diagnostic',
+          allOf(contains('401'), isNot(contains('test-key'))),
         ),
-      );
-      expect(calls, 1);
-      transport.close();
-    },
-  );
+      ),
+    );
+    expect(calls, 1);
+  });
 }

@@ -5,12 +5,15 @@
 //   lib/shared/services/ai/tools.dart
 //   lib/shared/services/ai/codemode/tool.dart
 
+import 'package:reveric/shared/app_config.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reveric/shared/database/app_database.dart';
 import 'package:reveric/shared/database/novel_content_database.dart';
 import 'package:reveric/shared/services/ai/codemode/tool.dart';
 import 'package:reveric/shared/services/ai/tools.dart';
+import 'package:reveric/shared/services/ai/tool_catalog.dart';
+import 'package:reveric/shared/services/mcp/runtime.dart';
 import 'package:reveric/shared/services/novel_actions.dart';
 import 'package:reveric/shared/services/novel_content.dart';
 import 'package:reveric/shared/services/screenplay_service.dart';
@@ -36,6 +39,8 @@ void main() {
       content,
       workingOverlayService: overlay,
       sessionId: 'test',
+      skillLoader: (_) async => null,
+      suggestNextActionCallback: (_, _) {},
     )..registerAllTools();
   });
   tearDown(() async {
@@ -53,8 +58,161 @@ void main() {
     final target = manager ?? tools;
     final result = await target.executeTool(name: name, input: input);
     expect(result['ok'], ok, reason: '$name $input: $result');
+    final definition = target.buildToolDefs().singleWhere(
+      (tool) => tool.name == name,
+    );
+    expect(
+      _accepts(definition.outputSchema!, result),
+      isTrue,
+      reason: '$name output schema: $result',
+    );
     return result;
   }
+
+  test(
+    'builtin definitions expose output schemas through describeTool',
+    () async {
+      final runtime = McpRuntime(
+        connect: (_) => throw StateError('No MCP connection expected'),
+      );
+      addTearDown(runtime.close);
+      final catalog = AgentToolCatalog(
+        runtime: runtime,
+        builtins: () => [...tools.buildToolDefs(), codemodeToolDef],
+      );
+      for (final definition in [...tools.buildToolDefs(), codemodeToolDef]) {
+        expect(definition.outputSchema, isNotNull, reason: definition.name);
+        final described = await catalog.describeTool(definition.name);
+        expect(
+          described['outputSchema'],
+          definition.outputSchema,
+          reason: definition.name,
+        );
+      }
+    },
+  );
+
+  test(
+    'Write no-op semantics agree across resource kinds and arrays',
+    () async {
+      for (final (collection, fields, field, value)
+          in <(String, Map<String, dynamic>, String, Object)>[
+            ('volumes', {'title': '卷'}, 'title', '新卷'),
+            ('characters', {'name': '角色'}, 'name', '新角色'),
+            ('foreshadowing', {'title': '伏笔'}, 'title', '新伏笔'),
+            ('skills', {'title': '技能'}, 'content', '新内容'),
+            ('lore', {'title': '世界'}, 'content', '新世界'),
+            if (ideationCanvasEnabled)
+              ('canvas', {'name': '画布'}, 'description', '新说明'),
+          ]) {
+        final created = await call('Create', {
+          'path': collection,
+          'fields': fields,
+        });
+        final input = {'path': '${created['path']}/$field', 'value': value};
+        expect(
+          (await call('Write', input))['updated'],
+          isTrue,
+          reason: collection,
+        );
+        expect(
+          (await call('Write', input))['updated'],
+          isFalse,
+          reason: collection,
+        );
+        expect((await call('Read', {'path': input['path']}))['value'], value);
+      }
+      final locationId = await content.locationsService.createLocation(
+        name: '地点',
+        type: 'world',
+      );
+      final locationInput = {
+        'path': 'locations/$locationId/name',
+        'value': '新地点',
+      };
+      expect((await call('Write', locationInput))['updated'], isTrue);
+      expect((await call('Write', locationInput))['updated'], isFalse);
+      final character = await call('Create', {
+        'path': 'characters',
+        'fields': {'name': '数组角色'},
+      });
+      for (final field in ['tags', 'aliases']) {
+        final input = {
+          'path': '${character['path']}/$field',
+          'value': ['甲', '乙'],
+        };
+        expect((await call('Write', input))['updated'], isTrue);
+        expect((await call('Write', input))['updated'], isFalse);
+      }
+      final chapter = await call('Create', {
+        'path': 'chapters',
+        'fields': {'title': '分析'},
+      });
+      for (final (field, value) in <(String, Object)>[
+        ('tension', 5),
+        ('emotion', ['tense']),
+        (
+          'events',
+          [
+            {'title': '事件', 'summary': '经过'},
+          ],
+        ),
+      ]) {
+        final input = {'path': '${chapter['path']}/$field', 'value': value};
+        expect((await call('Write', input))['updated'], isTrue);
+        expect((await call('Write', input))['updated'], isFalse);
+      }
+    },
+  );
+
+  test(
+    'Write reports actual changes when repeating the same chapter value',
+    () async {
+      final chapter = await call('Create', {
+        'path': 'chapters',
+        'fields': {'title': '原题'},
+      });
+      final path = '${chapter['path']}/title';
+      final changed = await call('Write', {'path': path, 'value': '新题'});
+      expect(changed['updated'], isTrue);
+      expect((await call('Read', {'path': path}))['value'], '新题');
+      final unchanged = await call('Write', {'path': path, 'value': '新题'});
+      expect(unchanged['updated'], isFalse);
+      expect((await call('Read', {'path': path}))['value'], '新题');
+    },
+  );
+
+  test('Grep exposes continuation after head_limit and terminates', () async {
+    final chapter = await call('Create', {
+      'path': 'chapters',
+      'fields': {'title': '检索', 'content': '命中甲\n命中乙\n命中丙\n命中丁\n命中戊'},
+    });
+    final input = {
+      'path': '${chapter['path']}/content',
+      'pattern': '命中',
+      'head_limit': 2,
+    };
+    final first = await call('Grep', input);
+    expect(first['truncated'], isTrue);
+    expect(first['has_more'], isTrue);
+    expect(first['next_offset'], 2);
+    final second = await call('Grep', {
+      ...input,
+      'offset': first['next_offset'],
+    });
+    expect(second['next_offset'], 4);
+    final last = await call('Grep', {
+      ...input,
+      'offset': second['next_offset'],
+    });
+    expect(last['has_more'], isFalse);
+    expect(last['truncated'], isFalse);
+    expect(last, isNot(contains('next_offset')));
+    final text = '${first['text']}${second['text']}${last['text']}';
+    for (final suffix in ['甲', '乙', '丙', '丁', '戊']) {
+      expect('命中$suffix'.allMatches(text), hasLength(1));
+    }
+  });
 
   test(
     'read contracts are independent of content kind and stored data',
@@ -88,8 +246,72 @@ void main() {
   );
 
   test(
+    'listing next_offset traverses every chapter once and terminates',
+    () async {
+      final paths = <String>[];
+      for (var i = 0; i < 5; i++) {
+        final created = await call('Create', {
+          'path': 'chapters',
+          'fields': {'title': '分页 $i'},
+        });
+        paths.add(created['path'] as String);
+      }
+      final contract = await call('Read', {'path': '/_schema/chapters'});
+      final operation = (contract['operation_contracts'] as List)
+          .cast<Map>()
+          .singleWhere(
+            (op) => op['tool'] == 'Read' && op['target'] == 'listing',
+          );
+      final properties =
+          operation['result']['output_schema']['properties'] as Map;
+      expect(properties, contains('next_offset'));
+      expect(properties, isNot(contains('offset')));
+
+      final seen = <String>[];
+      var offset = 0;
+      var pages = 0;
+      while (true) {
+        final page = await call('Read', {
+          'path': 'chapters',
+          'sort': 'chapter_num',
+          'offset': offset,
+          'limit': 2,
+        });
+        expect(page, isNot(contains('offset')));
+        seen.addAll((page['entries'] as List).map((e) => e['path'] as String));
+        pages++;
+        if (page['has_more'] == false) {
+          expect(page, isNot(contains('next_offset')));
+          break;
+        }
+        expect(page['next_offset'], greaterThan(offset));
+        expect(pages, lessThan(3));
+        offset = page['next_offset'] as int;
+      }
+      expect(pages, 3);
+      expect(seen, paths);
+
+      for (final input in [
+        {'path': 'chapters', 'offset': 5},
+        {'path': 'chapters', 'offset': 100},
+        {'path': 'chapters?chapter_num=999'},
+      ]) {
+        final empty = await call('Read', input);
+        expect(empty['entries'], isEmpty);
+        expect(empty['has_more'], isFalse);
+        expect(empty, isNot(contains('offset')));
+        expect(empty, isNot(contains('next_offset')));
+      }
+    },
+  );
+
+  test(
     'canvas layout uses value and reports changes without movement counts',
     () async {
+      if (!ideationCanvasEnabled) {
+        await call('Read', {'path': '/canvas'}, ok: false);
+        return;
+      }
       await call('Create', {
         'path': 'canvas',
         'fields': {'name': '空画布'},
@@ -153,10 +375,6 @@ void main() {
         sessionId: 'test',
       )..registerAllTools();
       addTearDown(script.dispose);
-      final beat = await call('Create', {
-        'path': 'beats',
-        'fields': {'episode_id': fixture.episodeId, 'act_number': 1},
-      }, manager: script);
       final scene = await call('Create', {
         'path': 'scenes',
         'fields': {'episode_id': fixture.episodeId},
@@ -169,8 +387,6 @@ void main() {
         'seasons/${fixture.seasonId}/title',
         'episodes/${fixture.episodeId}/title',
         'episodes/${fixture.episodeId}/outline',
-        '${beat['path']}/title',
-        '${beat['path']}/description',
         '${scene['path']}/title',
         '${scene['path']}/synopsis',
         '${element['path']}/text',
@@ -218,18 +434,6 @@ void main() {
         }, manager: script))['updated'],
         isTrue,
       );
-      final movedBeat = await call('Write', {
-        'path': beat['path'],
-        'fields': {'act_number': 2},
-      }, manager: script);
-      expect(movedBeat['updated'], isTrue);
-      expect(
-        (await call('Read', {
-          'path': beat['path'],
-        }, manager: script))['act_number'],
-        2,
-      );
-
       final characters = <String>[];
       for (final name in ['甲', '乙', '丙']) {
         final character = await call('Create', {
@@ -259,14 +463,18 @@ void main() {
       }, manager: script);
       final tail = await call('Read', {
         'path': castPath,
-        'offset': 2,
+        'offset': cast['next_offset'],
         'limit': 2,
       }, manager: script);
       expect(cast['value'], hasLength(2));
       expect(cast['total'], 3);
       expect(cast['has_more'], isTrue);
+      expect(cast['next_offset'], 2);
+      expect(cast, isNot(contains('offset')));
       expect(tail['value'], hasLength(1));
       expect(tail['has_more'], isFalse);
+      expect(tail, isNot(contains('next_offset')));
+      expect(tail, isNot(contains('offset')));
       expect(cast, isNot(contains('entries')));
       expect(
         [
@@ -610,33 +818,34 @@ void main() {
   test(
     'canvas and screenplay Edit share counts without echoing input all',
     () async {
-      await call('Create', {
-        'path': 'canvas',
-        'fields': {'name': '测试'},
-      });
-      final node = await call('Create', {
-        'path': 'canvas/测试/nodes',
-        'fields': {'type': 'sticky', 'content': '旧旧'},
-      });
-      final canvasEdit = await call('Edit', {
-        'path': '${node['path']}/content',
-        'old_text': '旧',
-        'new_text': '新',
-        'all': true,
-      });
-      expect(canvasEdit['match_count'], 2);
-      expect(canvasEdit['edited'], isTrue);
-      final canvasUnchanged = await call('Edit', {
-        'path': '${node['path']}/content',
-        'old_text': '新',
-        'new_text': '新',
-        'all': true,
-      });
-      expect(canvasUnchanged['edited'], isFalse);
-      expect(canvasEdit.containsKey('updated'), isFalse);
-      expect(canvasEdit.containsKey('replacements'), isFalse);
-      expect(canvasEdit.containsKey('all'), isFalse);
-
+      if (ideationCanvasEnabled) {
+        await call('Create', {
+          'path': 'canvas',
+          'fields': {'name': '测试'},
+        });
+        final node = await call('Create', {
+          'path': 'canvas/测试/nodes',
+          'fields': {'type': 'sticky', 'content': '旧旧'},
+        });
+        final canvasEdit = await call('Edit', {
+          'path': '${node['path']}/content',
+          'old_text': '旧',
+          'new_text': '新',
+          'all': true,
+        });
+        expect(canvasEdit['match_count'], 2);
+        expect(canvasEdit['edited'], isTrue);
+        final canvasUnchanged = await call('Edit', {
+          'path': '${node['path']}/content',
+          'old_text': '新',
+          'new_text': '新',
+          'all': true,
+        });
+        expect(canvasUnchanged['edited'], isFalse);
+        expect(canvasEdit.containsKey('updated'), isFalse);
+        expect(canvasEdit.containsKey('replacements'), isFalse);
+        expect(canvasEdit.containsKey('all'), isFalse);
+      }
       final fixture = await ScreenplayService(db).createInitialStructure();
       final manager = AiToolManager(
         content,
@@ -676,14 +885,6 @@ void main() {
       expect(schema['required'], contains('value'));
       expect(_accepts(schema, read), isTrue);
 
-      final beat = await call('Create', {
-        'path': 'beats',
-        'fields': {
-          'episode_id': fixture.episodeId,
-          'act_number': 1,
-          'description': '旧旧',
-        },
-      }, manager: manager);
       final scene = await call('Create', {
         'path': 'scenes',
         'fields': {
@@ -697,7 +898,6 @@ void main() {
         'fields': {'type': 'action', 'text': '旧旧'},
       }, manager: manager);
       for (final path in [
-        '${beat['path']}/description',
         '${scene['path']}/title',
         '${scene['path']}/synopsis',
         '${element['path']}/text',

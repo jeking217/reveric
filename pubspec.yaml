@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.6.0
+version: 0.7.0
 
 environment:
   sdk: ^3.12.0
@@ -202,6 +202,7 @@ flutter:
     - assets/icons/providers/
     - assets/icons/ai_assistant/
     - assets/icons/phosphor/ # Phosphor Icons (MIT), https://github.com/phosphor-icons/core
+    - assets/icons/brand/ # QQ mark from Simple Icons (CC0), https://simpleicons.org
     - assets/icons/collapse.svg
     - assets/images/map.webp
     - assets/images/onboarding-background.webp
@@ -224,6 +225,7 @@ flutter:
     - assets/bundled_skills/management/references/subagents.md
     - assets/bundled_skills/management/references/themes.md
     - assets/bundled_skills/management/references/providers.md
+    - assets/bundled_skills/management/references/settings.md
     - assets/bundled_skills/canvas-composition/SKILL.md
     - assets/bundled_skills/canvas-composition/references/story-structure.md
     - assets/bundled_skills/canvas-composition/references/branching-story.md

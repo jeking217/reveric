@@ -2,30 +2,21 @@
 
 # Reveric | 幻界
 
-### AI Native 桌面创作工作台
-**智能体读懂整部作品，和你一起从小说写到成片**
+### AI Native 桌面创作工作台，读懂整部作品，和你一起从小说写到成片
 
 <p align="center">
-  <a href="./LICENSE"><img src="https://img.shields.io/github/license/looplj/reveric?color=brightgreen" alt="license"></a>
-  <a href="https://github.com/looplj/reveric/releases/latest"><img src="https://img.shields.io/github/v/release/looplj/reveric?color=brightgreen&include_prereleases" alt="release"></a>
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Android-blue" alt="platform">
-  <img src="https://img.shields.io/badge/flutter-3.8%2B-02569B?logo=flutter&logoColor=white" alt="flutter">
-  <img src="https://img.shields.io/badge/storage-SQLite%20Local--First-003B57?logo=sqlite&logoColor=white" alt="sqlite">
+  <a href="https://qm.qq.com/q/Ap8pfOWHDO"><img src="https://img.shields.io/badge/QQ%20%E4%BA%A4%E6%B5%81%E7%BE%A4-924148054-12B7F5?style=for-the-badge&logo=qq&logoColor=white&labelColor=0E7FC9" alt="加入 QQ 交流群" height="40"></a>
 </p>
 
 <p align="center">
   <a href="README.md">简体中文</a> •
-  <a href="README.en-US.md">English</a>
-</p>
-
-<p align="center">
+  <a href="README.en-US.md">English</a> ｜
   <a href="#核心特性">核心特性</a> •
   <a href="#全流程展示">全流程展示</a> •
   <a href="#模型支持">模型支持</a> •
   <a href="#下载安装">下载安装</a> •
   <a href="#快速开始">快速开始</a> •
-  <a href="#开发者指南">开发者指南</a> •
-  <a href="#问题反馈">问题反馈</a> •
+  <a href="#反馈与交流">反馈与交流</a> •
   <a href="#许可证">许可证</a>
 </p>
 
@@ -254,56 +245,23 @@ Reveric 为短剧制片与无限画布深度集成了主流视频生成大模型
 
 ---
 
-## 开发者指南
+## 反馈与交流
 
-Reveric 采用 Flutter 与现代跨平台架构构建，欢迎社区开发者共同探索与改进。
+### 问题反馈
 
-### 技术栈
+遇到缺陷或有功能建议，请提交到 [GitHub Issues](https://github.com/looplj/reveric/issues)。
 
-- **框架与语言**：Flutter 3.8+、Dart SDK
-- **状态管理**：Riverpod (Hooks Riverpod) + Flutter Hooks
-- **本地存储**：Drift (SQLite) Local-First 架构
-- **3D 引擎**：Flutter Scene（3D 场景与镜头渲染）
-- **多媒体处理**：FFmpeg Kit、FVP 视频播放引擎
+### QQ 交流群
 
-### 本地编译与运行
+扫码或[点击链接](https://qm.qq.com/q/Ap8pfOWHDO)加入（群号：924148054），交流 AI 小说与短剧创作、分享使用心得。
 
-```bash
-# 1. 克隆代码仓库
-git clone https://github.com/looplj/reveric.git
-cd reveric
+<p>
+  <a href="https://qm.qq.com/q/Ap8pfOWHDO"><img src="assets/images/qq-group.jpg" alt="QQ 群二维码" width="240"/></a>
+</p>
 
-# 2. 安装项目依赖 (推荐使用 FVM 管理 Flutter SDK)
-make deps
-# 或者: fvm flutter pub get
+### 其他社区
 
-# 3. 运行代码生成器 (Drift 数据库与 Riverpod 代码)
-make codegen
-
-# 4. 本地启动应用调试
-make run-macos     # macOS 客户端
-# make run-windows # Windows 客户端
-# make run-linux   # Linux 客户端
-
-# 5. 构建 Release 正式安装包
-make build-macos-release   # 构建 macOS 客户端
-make build-windows-release # 构建 Windows 客户端
-```
-
-```bash
-fvm flutter doctor          # 工具链体检
-fvm flutter test            # 跑全部测试
-fvm flutter run -d windows   # 跑桌面端
-```
-
----
-
-## 问题反馈
-
-如果你在使用中遇到了问题，或对新功能有独到想法，欢迎参与交流：
-
-- 提交缺陷报告或需求建议：[GitHub Issues](https://github.com/looplj/reveric/issues)
-- 学 AI、交流经验：[LINUX DO 社区](https://linux.do/)
+- [LINUX DO 社区](https://linux.do/)：学 AI、交流创作经验
 
 ---
 
@@ -317,6 +275,6 @@ fvm flutter run -d windows   # 跑桌面端
 
 **Reveric | 幻界** · 让智能体成为你的创作搭档
 
-[主页](https://github.com/looplj/reveric) • [发行版](https://github.com/looplj/reveric/releases) • [问题反馈](https://github.com/looplj/reveric/issues)
+[主页](https://github.com/looplj/reveric) • [发行版](https://github.com/looplj/reveric/releases) • [问题反馈](https://github.com/looplj/reveric/issues) • [QQ 群](https://qm.qq.com/q/Ap8pfOWHDO)
 
 </div>

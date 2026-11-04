@@ -521,6 +521,7 @@ abstract final class LocaleKeys {
 
   static const productionTitle = 'screenplay.production.title';
   static const productionCanvas = 'screenplay.production.canvas';
+  static const productionClips = 'screenplay.production.clips';
   static const productionDeleteNodeConfirm =
       'screenplay.production.deleteNodeConfirm';
   static const productionIndependentMedia =
@@ -605,6 +606,15 @@ abstract final class LocaleKeys {
   static const productionVideoFile = 'screenplay.production.videoFile';
   static const productionEmpty = 'screenplay.production.empty';
   static const productionResultPending = 'screenplay.production.resultPending';
+  static const productionMiddleFrame = 'screenplay.production.middleFrame';
+  static const productionMiddleFrameReference =
+      'screenplay.production.middleFrameReference';
+  static const productionMiddleFrameReferenceNumber =
+      'screenplay.production.middleFrameReferenceNumber';
+  static const productionMiddleFrameNumber =
+      'screenplay.production.middleFrameNumber';
+  static const productionGenerateMiddleFramesUnsupported =
+      'screenplay.production.generateMiddleFramesUnsupported';
   static const productionFirstFrame = 'screenplay.production.firstFrame';
   static const productionLastFrame = 'screenplay.production.lastFrame';
   static const productionFirstFrameReference =
@@ -1294,21 +1304,6 @@ abstract final class LocaleKeys {
   static const aiFeedbackTitle = 'ai.feedback_title';
   static const aiFeedbackDescription = 'ai.feedback_description';
   static const aiFeedbackPlaceholder = 'ai.feedback_placeholder';
-  static const aiFeedbackSubmitIssue = 'ai.feedback_submit_issue';
-  static const aiFeedbackIssueTitle = 'ai.feedback_issue_title';
-  static const aiFeedbackIssueBody = 'ai.feedback_issue_body';
-  static const aiFeedbackOpenIssueFailed = 'ai.feedback_open_issue_failed';
-  static const aiFeedbackDiagnosticsTitle = 'ai.feedback_diagnostics_title';
-  static const aiFeedbackDiagnosticsDescription =
-      'ai.feedback_diagnostics_description';
-  static const aiFeedbackExport = 'ai.feedback_export';
-  static const aiFeedbackExporting = 'ai.feedback_exporting';
-  static const aiFeedbackExportSaved = 'ai.feedback_export_saved';
-  static const aiFeedbackExportFailed = 'ai.feedback_export_failed';
-  static const aiFeedbackSendEmail = 'ai.feedback_send_email';
-  static const aiFeedbackEmailSubject = 'ai.feedback_email_subject';
-  static const aiFeedbackEmailBody = 'ai.feedback_email_body';
-  static const aiFeedbackOpenEmailFailed = 'ai.feedback_open_email_failed';
   static const aiFeedbackSession = 'ai.feedback_session';
   static const aiFeedbackModel = 'ai.feedback_model';
   static const aiFeedbackMessages = 'ai.feedback_messages';
@@ -3045,7 +3040,9 @@ abstract final class LocaleKeys {
       'home.greeting_personalized_simple';
   static const homeRecentSessions = 'home.recent_sessions';
   static const homeRecentWork = 'home.recent_work';
-  static const homeSectionAi = 'home.section_ai';
+  static const homeSectionAgent = 'home.section_agent';
+  static const homeSectionChat = 'home.section_chat';
+  static const homeSectionModel = 'home.section_model';
   static const homeSectionSettings = 'home.section_settings';
   static const homeSectionWorks = 'home.section_works';
   static const homeNavWorks = 'home.nav_works';
@@ -3231,6 +3228,7 @@ abstract final class LocaleKeys {
   static const libraryQuickStartChatHint = 'library.quick_start_chat_hint';
   static const libraryAdaptBannerTitle = 'library.adapt_banner_title';
   static const libraryAdaptBannerHint = 'library.adapt_banner_hint';
+  static const libraryAdaptNoSourceNovels = 'library.adapt_no_source_novels';
   static const libraryQuickStartHint = 'library.quick_start_hint';
   static const libraryScreenplayWorkspacePreparing =
       'library.screenplay_workspace_preparing';
@@ -3253,6 +3251,7 @@ abstract final class LocaleKeys {
   static const libraryWorkName = 'library.work_name';
   static const librarySelectCover = 'library.select_cover';
   static const libraryStartImport = 'library.start_import';
+  static const libraryAdaptAfterImport = 'library.adapt_after_import';
   static const librarySettings = 'library.settings';
   static const libraryStatusAbandoned = 'library.status_abandoned';
   static const libraryStatusArchived = 'library.status_archived';
@@ -4005,14 +4004,6 @@ abstract final class LocaleKeys {
   static const settingsMcpUnknown = 'settings.mcp_unknown';
   // ── settings ────────────────────────────────────────
   static const settingsAddCustomProvider = 'settings.add_custom_provider';
-  static const settingsAddCustomProviderNameHint =
-      'settings.add_custom_provider_name_hint';
-  static const settingsAddCustomProviderNameLabel =
-      'settings.add_custom_provider_name_label';
-  static const settingsAddCustomProviderTitle =
-      'settings.add_custom_provider_title';
-  static const settingsAddCustomProviderTypeLabel =
-      'settings.add_custom_provider_type_label';
   static const settingsAi = 'settings.ai';
   static const settingsAiAgentAvatar = 'settings.ai_agent_avatar';
   static const settingsAiAgentAvatarDescription =
@@ -4040,6 +4031,35 @@ abstract final class LocaleKeys {
   static const settingsProviderSearchHint = 'settings.provider_search_hint';
   static const settingsProviderSponsoredBadge =
       'settings.provider_sponsored_badge';
+  static const settingsProviderApi88DeepseekDiscount =
+      'settings.provider_api88_deepseek_discount';
+  static const settingsProviderApi88DeepseekDetail =
+      'settings.provider_api88_deepseek_detail';
+  static const settingsProviderApi88Category =
+      'settings.provider_api88_category';
+  static const settingsProviderApi88Title = 'settings.provider_api88_title';
+  static const settingsProviderApi88Summary = 'settings.provider_api88_summary';
+  static const settingsProviderApi88ListTagline =
+      'settings.provider_api88_list_tagline';
+  static const settingsProviderApi88ImageDetail =
+      'settings.provider_api88_image_detail';
+  static const settingsProviderApi88ImageUnit =
+      'settings.provider_api88_image_unit';
+  static const settingsProviderApi88VideoDetail =
+      'settings.provider_api88_video_detail';
+  static const settingsProviderApi88VideoUnit =
+      'settings.provider_api88_video_unit';
+  static const settingsProviderApi88TokensUnit =
+      'settings.provider_api88_tokens_unit';
+  static const settingsProviderApi88ChatModels =
+      'settings.provider_api88_chat_models';
+  static const settingsProviderApi88VoiceModels =
+      'settings.provider_api88_voice_models';
+  static const settingsProviderApi88Link = 'settings.provider_api88_link';
+  static const settingsProviderApi88PricingLink =
+      'settings.provider_api88_pricing_link';
+  static const settingsProviderApi88PricingNote =
+      'settings.provider_api88_pricing_note';
   static const settingsProviderMetasoLink = 'settings.provider_metaso_link';
   static const settingsProviderMetasoCategory =
       'settings.provider_metaso_category';
@@ -4289,14 +4309,11 @@ abstract final class LocaleKeys {
   static const narrationAuthentication = 'screenplay.narration.authentication';
   static const narrationRateLimited = 'screenplay.narration.rateLimited';
 
-  static const screenplayAddBeat = 'screenplay.add_beat';
   static const screenplayAddEpisode = 'screenplay.add_episode';
   static const screenplayAddScene = 'screenplay.add_scene';
   static const screenplayAddSeason = 'screenplay.add_season';
-  static const screenplayAct = 'screenplay.act';
   static const screenplayActNumber = 'screenplay.act_number';
   static const screenplayActualEpisodes = 'screenplay.actual_episodes';
-  static const screenplayAddAct = 'screenplay.add_act';
   static const screenplayAppearanceMatrix = 'screenplay.appearance_matrix';
   static const screenplayAtLeastOneSeason = 'screenplay.at_least_one_season';
   static const screenplayAutosaveOn = 'screenplay.autosave_on';
@@ -4381,7 +4398,6 @@ abstract final class LocaleKeys {
   static const screenplayLinesUnit = 'screenplay.lines_unit';
   static const screenplayLocations = 'screenplay.locations';
   static const screenplayPlaces = 'screenplay.places';
-  static const screenplayUnitBeats = 'screenplay.unit_beats';
   static const screenplayUnitEpisodes = 'screenplay.unit_episodes';
   static const screenplayUnitLines = 'screenplay.unit_lines';
   static const screenplayUnitPeople = 'screenplay.unit_people';
@@ -4393,16 +4409,13 @@ abstract final class LocaleKeys {
   static const screenplayMatrixHint = 'screenplay.matrix_hint';
   static const screenplayMoveDown = 'screenplay.move_down';
   static const screenplayMoveUp = 'screenplay.move_up';
-  static const screenplayNoBeats = 'screenplay.no_beats';
   static const screenplayNoCharacters = 'screenplay.no_characters';
   static const screenplayNoOutline = 'screenplay.no_outline';
   static const screenplayNoScenes = 'screenplay.no_scenes';
   static const screenplayNoScenesSub = 'screenplay.no_scenes_sub';
   static const screenplayNoScriptYet = 'screenplay.no_script_yet';
   static const screenplayNotePrefix = 'screenplay.note_prefix';
-  static const screenplayOpenBeatsBoard = 'screenplay.open_beats_board';
   static const screenplayOutline = 'screenplay.outline';
-  static const screenplayOutlineBeats = 'screenplay.outline_beats';
   static const screenplayOutlineHint = 'screenplay.outline_hint';
   static const screenplayWriteFromSynopsis = 'screenplay.write_from_synopsis';
   static const screenplayOverPlanned = 'screenplay.over_planned';
@@ -4449,7 +4462,6 @@ abstract final class LocaleKeys {
   static const screenplayTimeLater = 'screenplay.time_later';
   static const screenplayTimeSameTime = 'screenplay.time_same_time';
   static const screenplayTimeHint = 'screenplay.time_hint';
-  static const screenplayUntitledBeat = 'screenplay.untitled_beat';
   static const screenplayUntitledEpisode = 'screenplay.untitled_episode';
   static const screenplayUntitledScene = 'screenplay.untitled_scene';
   static const screenplayDeletedCharacter = 'screenplay.deleted_character';
@@ -4667,6 +4679,7 @@ abstract final class LocaleKeys {
   static const settingsEnglish = 'settings.english';
   static const settingsGeneral = 'settings.general';
   static const settingsGroupAi = 'settings.group_ai';
+  static const settingsGroupCommunity = 'settings.group_community';
   static const settingsGroupData = 'settings.group_data';
   static const settingsGroupPreferences = 'settings.group_preferences';
   static const settingsGroupSystem = 'settings.group_system';
@@ -4750,6 +4763,24 @@ abstract final class LocaleKeys {
       'settings.provider_proxy_username_hint';
   static const settingsProviderProxyUsernameLabel =
       'settings.provider_proxy_username_label';
+  static const settingsProviderTypePickerTitle =
+      'settings.provider_type_picker_title';
+  static const settingsProviderTypeFixedUrl =
+      'settings.provider_type_fixed_url';
+  static const settingsProviderKindChat = 'settings.provider_kind_chat';
+  static const settingsProviderKindImage = 'settings.provider_kind_image';
+  static const settingsProviderKindVideo = 'settings.provider_kind_video';
+  static const settingsProviderKindAudio = 'settings.provider_kind_audio';
+  static const settingsProviderTypeNoteOpenaiCompatible =
+      'settings.provider_type_note_openai_compatible';
+  static const settingsProviderTypeNoteMinimax =
+      'settings.provider_type_note_minimax';
+  static const settingsProviderTypeNoteDoubao =
+      'settings.provider_type_note_doubao';
+  static const settingsProviderDraftBadge = 'settings.provider_draft_badge';
+  static const settingsProviderDraftTypeHint =
+      'settings.provider_draft_type_hint';
+  static const settingsProviderNewTitle = 'settings.provider_new_title';
   static const settingsProviderSelectPlaceholder =
       'settings.provider_select_placeholder';
   static const settingsProviderTypeLabel = 'settings.provider_type_label';
@@ -4759,6 +4790,8 @@ abstract final class LocaleKeys {
       'settings.provider_description_codex';
   static const settingsProviderDescriptionOpenaiCompatible =
       'settings.provider_description_openai_compatible';
+  static const settingsProviderDescriptionOoki =
+      'settings.provider_description_ooki';
   static const settingsProviderDescriptionApi88 =
       'settings.provider_description_api88';
   static const settingsProviderDescriptionOpenrouter =
@@ -4843,10 +4876,6 @@ abstract final class LocaleKeys {
       'settings.backup_page_description';
   static const settingsObjectStorageProvider =
       'settings.object_storage_provider';
-  static const settingsObjectStorageProviderS3 =
-      'settings.object_storage_provider_s3';
-  static const settingsObjectStorageProviderS3Hint =
-      'settings.object_storage_provider_s3_hint';
   static const settingsObjectStorageEndpoint =
       'settings.object_storage_endpoint';
   static const settingsObjectStorageEndpointHint =
@@ -4889,6 +4918,32 @@ abstract final class LocaleKeys {
       'settings.object_storage_upload_failed';
   static const settingsObjectStorageReadFailed =
       'settings.object_storage_read_failed';
+  static const settingsObjectStorageVendorAliyun =
+      'settings.object_storage_vendor_aliyun';
+  static const settingsObjectStorageVendorTencent =
+      'settings.object_storage_vendor_tencent';
+  static const settingsObjectStorageVendorCloudflare =
+      'settings.object_storage_vendor_cloudflare';
+  static const settingsObjectStorageVendorAws =
+      'settings.object_storage_vendor_aws';
+  static const settingsObjectStorageVendorCustom =
+      'settings.object_storage_vendor_custom';
+  static const settingsObjectStorageVendorCustomHint =
+      'settings.object_storage_vendor_custom_hint';
+  static const settingsObjectStorageCreateBucket =
+      'settings.object_storage_create_bucket';
+  static const settingsObjectStorageAccountId =
+      'settings.object_storage_account_id';
+  static const settingsObjectStorageAccountIdHint =
+      'settings.object_storage_account_id_hint';
+  static const settingsObjectStorageRegionHintAliyun =
+      'settings.object_storage_region_hint_aliyun';
+  static const settingsObjectStorageRegionHintTencent =
+      'settings.object_storage_region_hint_tencent';
+  static const settingsObjectStorageBucketHintTencent =
+      'settings.object_storage_bucket_hint_tencent';
+  static const settingsObjectStorageInvalidIdentifier =
+      'settings.object_storage_invalid_identifier';
   static const settingsThemeClassic = 'settings.theme_classic';
   static const settingsThemeClassicDescription =
       'settings.theme_classic_description';
@@ -4971,9 +5026,10 @@ abstract final class LocaleKeys {
   static const settingsAboutFeedback = 'settings.about_feedback';
   static const settingsAboutFeedbackDescription =
       'settings.about_feedback_description';
-  static const settingsAboutOpenIssues = 'settings.about_open_issues';
-  static const settingsAboutOpenIssuesFailed =
-      'settings.about_open_issues_failed';
+  static const settingsAboutJoinQqGroup = 'settings.about_join_qq_group';
+  static const settingsAboutGithubRepository =
+      'settings.about_github_repository';
+  static const settingsAboutQqOpenFailed = 'settings.about_qq_open_failed';
   static const settingsAboutOpenSource = 'settings.about_open_source';
   static const settingsAboutOpenSourceDescription =
       'settings.about_open_source_description';
@@ -6130,4 +6186,20 @@ abstract final class LocaleKeys {
   static const directorPresetLowAngle = 'director.preset_low_angle';
   static const directorPresetBird = 'director.preset_bird';
   static const directorPresetDutch = 'director.preset_dutch';
+  static const aiFeedbackUpload = 'ai.feedback_upload';
+  static const aiFeedbackUploading = 'ai.feedback_uploading';
+  static const aiFeedbackSuccess = 'ai.feedback_success';
+  static const aiFeedbackFailed = 'ai.feedback_failed';
+  static const settingsAboutUploadLogs = 'settings.about_upload_logs';
+  static const settingsAboutUploadLogsDescription =
+      'settings.about_upload_logs_description';
+  static const settingsAboutUploadingLogs = 'settings.about_uploading_logs';
+  static const settingsAboutUploadLogsConfirmTitle =
+      'settings.about_upload_logs_confirm_title';
+  static const settingsAboutUploadLogsConfirmDescription =
+      'settings.about_upload_logs_confirm_description';
+  static const settingsAboutUploadLogsSuccess =
+      'settings.about_upload_logs_success';
+  static const settingsAboutUploadLogsFailed =
+      'settings.about_upload_logs_failed';
 }

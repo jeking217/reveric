@@ -23,6 +23,7 @@
 //   assets/translations/en/relation.json
 //   assets/translations/zh-CN/relation.json
 import 'package:flutter/widgets.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:reveric/shared/entity_graph/labels.dart';
@@ -68,6 +69,35 @@ class AiToolResolvedResource {
   final String? subResourceTitle;
   final String? field;
   final Map<String, String> queryParameters;
+
+  // 解析结果按实际展示字段比较，正文、字数和更新时间变化不刷新工具行。
+  List<Object?> get _displayFields => [
+    collection,
+    resourceTitle,
+    workTitle,
+    isUnavailableWork,
+    showCollection,
+    resourceMeta,
+    ordinals,
+    isListing,
+    chapterNum,
+    volumeNum,
+    subCollection,
+    subResourceTitle,
+    field,
+    queryParameters,
+  ];
+
+  @override
+  bool operator ==(Object other) =>
+      other is AiToolResolvedResource &&
+      const DeepCollectionEquality().equals(
+        _displayFields,
+        other._displayFields,
+      );
+
+  @override
+  int get hashCode => const DeepCollectionEquality().hash(_displayFields);
 
   String displayLabel(BuildContext context) {
     final parts = <String>[
@@ -203,47 +233,54 @@ final toolResolvedResourceProvider =
         return null;
       }
 
+      final idOrName = parsed.resourceIdOrName;
+      AiToolResolvedResource fallback() => AiToolResolvedResource(
+        collection: parsed.collection,
+        resourceTitle: idOrName ?? '',
+        field: parsed.field,
+        queryParameters: parsed.queryParameters,
+      );
+      if (parsed.collection == 'chapters' || parsed.collection == 'volumes') {
+        final identity = _splitIdentityQueryParams(
+          parsed.collection,
+          parsed.queryParameters,
+        );
+        // 集合标签与树无关；带章号、卷号或标题的查询仍需解析实际节点。
+        if (idOrName == null &&
+            identity.chapterNum == null &&
+            identity.volumeNum == null &&
+            identity.title == null) {
+          return fallback();
+        }
+        return ref.watch(
+          chapterTreeProvider(params.databasePath).selectAsync((nodes) {
+            if (parsed.collection == 'chapters') {
+              if (idOrName != null) {
+                final chapter = _findNodeById(nodes, idOrName);
+                if (chapter != null && chapter.isChapter) {
+                  return _chapterResolvedResource(parsed, chapter);
+                }
+              } else {
+                return _resolveChapterQuery(nodes, parsed) ?? fallback();
+              }
+            } else {
+              if (idOrName != null) {
+                final volume = _findNodeById(nodes, idOrName);
+                if (volume != null && volume.isVolume) {
+                  return _volumeResolvedResource(parsed, volume);
+                }
+              } else {
+                return _resolveVolumeQuery(nodes, parsed) ?? fallback();
+              }
+            }
+            return fallback();
+          }),
+        );
+      }
+
       final service = ref.watch(
         novelContentServiceProvider(params.databasePath),
       );
-      final idOrName = parsed.resourceIdOrName;
-
-      // 章节/卷标签只需 title / chapter_num / volume_num / type，这些字段已随
-      // chapterTreeProvider（watchTree，不含正文）常驻内存。改为对内存树查表，
-      // 避免每张工具卡各自 getChapterById/getChapters 触发昂贵的 `chapters` VIEW
-      // 物化（详见 ChapterDao.watchContentById），否则会在单 DB isolate 上堵住
-      // 编辑器的正文查询。用 watch 而非 read：新建/改名章节时树重发 → 解析自动
-      // 自愈；重跑仅为内存查表，成本可忽略。
-      if (parsed.collection == 'chapters' || parsed.collection == 'volumes') {
-        final nodes = await ref.watch(
-          chapterTreeProvider(params.databasePath).future,
-        );
-        if (parsed.collection == 'chapters') {
-          if (idOrName != null) {
-            final chapter = _findNodeById(nodes, idOrName);
-            if (chapter != null && chapter.isChapter) {
-              return _chapterResolvedResource(parsed, chapter);
-            }
-          } else {
-            final queryResolved = _resolveChapterQuery(nodes, parsed);
-            if (queryResolved != null) {
-              return queryResolved;
-            }
-          }
-        } else {
-          if (idOrName != null) {
-            final volume = _findNodeById(nodes, idOrName);
-            if (volume != null && volume.isVolume) {
-              return _volumeResolvedResource(parsed, volume);
-            }
-          } else {
-            final queryResolved = _resolveVolumeQuery(nodes, parsed);
-            if (queryResolved != null) {
-              return queryResolved;
-            }
-          }
-        }
-      }
 
       if (parsed.collection == 'clips' && idOrName != null) {
         final shot = await StoryboardService(
@@ -361,15 +398,10 @@ final toolResolvedResourceProvider =
         );
       }
 
-      return AiToolResolvedResource(
-        collection: parsed.collection,
-        resourceTitle: idOrName ?? '',
-        field: parsed.field,
-        queryParameters: parsed.queryParameters,
-      );
+      return fallback();
     });
 
-const _screenplayCollections = {'seasons', 'episodes', 'scenes', 'beats'};
+const _screenplayCollections = {'seasons', 'episodes', 'scenes'};
 
 Future<AiToolResolvedResource?> _resolveScreenplayResource(
   Ref ref,
@@ -380,7 +412,6 @@ Future<AiToolResolvedResource?> _resolveScreenplayResource(
   final id = switch (collection) {
     'seasons' => parsed.locator('season_id'),
     'episodes' => parsed.locator('episode_id'),
-    'beats' => parsed.locator('beat_id'),
     'scenes' => parsed.locator('scene_id'),
     _ => null,
   };
@@ -388,20 +419,13 @@ Future<AiToolResolvedResource?> _resolveScreenplayResource(
   String? seasonId = collection == 'seasons' ? id : query['season_id'];
   String? episodeId = collection == 'episodes' ? id : query['episode_id'];
   final sceneId = collection == 'scenes' ? id : query['scene_id'];
-  final beatId = collection == 'beats' ? id : query['beat_id'];
   int? sceneNumber;
-  int? beatNumber;
   String title = '';
   String? detail;
 
   // ref.watch 尽量在 await 之前同步登记：本 provider 是 autoDispose，跨 await 再
   // watch 会在订阅者中途消失时用到已失效的 ref。root 之后的三个 family 都要
   // root.id，没法再往前提，所以集中在下面这一处一次性登记，然后统一 await。
-  final db = ref.watch(novelContentDatabaseProvider(databasePath));
-  // 节拍要先按 ID 查所属集才能订阅该集目录，这一次 DAO 读与 root 并行发起。
-  final beatRowFuture = beatId == null
-      ? null
-      : db.screenplayDao.getBeat(beatId);
   final root = await ref.watch(screenplayRootProvider(databasePath).future);
   if (root == null) {
     return null;
@@ -436,27 +460,6 @@ Future<AiToolResolvedResource?> _resolveScreenplayResource(
     }
     query.remove('scene_id');
   }
-  if (beatId != null) {
-    final row = await beatRowFuture!;
-    if (row == null) {
-      return null;
-    }
-    // 订阅所属集的节拍目录，编号/标题随改名和重排更新。这一处 watch 无法前移：
-    // 目标集要先由上面的 getBeat 查出来。
-    final beats = await ref.watch(
-      screenplayBeatsProvider(databasePath, row.episodeId).future,
-    );
-    final beat = beats.where((entry) => entry.id == beatId).firstOrNull;
-    if (beat == null) {
-      return null;
-    }
-    episodeId ??= beat.episodeId;
-    beatNumber = beat.beatNumber;
-    if (collection == 'beats' && id != null) {
-      title = beat.title;
-    }
-    query.remove('beat_id');
-  }
   final episode = episodes.where((row) => row.id == episodeId).firstOrNull;
   if (episodeId != null && episode == null) {
     return null;
@@ -485,7 +488,6 @@ Future<AiToolResolvedResource?> _resolveScreenplayResource(
       if (season != null) LocaleKeys.screenplaySeason: season.seasonNumber,
       if (episode != null) LocaleKeys.screenplayEpisode: episode.episodeNumber,
       LocaleKeys.screenplayScene: ?sceneNumber,
-      LocaleKeys.aiToolBeatIndexFmt: ?beatNumber,
     },
     field: parsed.field ?? detail,
     queryParameters: query,
@@ -816,7 +818,7 @@ String _localizedCollection(
     'seasons' => LocaleKeys.screenplaySeasons,
     'episodes' => LocaleKeys.screenplayEpisodes,
     'scenes' => LocaleKeys.screenplayScenes,
-    'clips' => LocaleKeys.productionTitle,
+    'clips' => LocaleKeys.productionClips,
     'beats' => LocaleKeys.screenplayBeats,
     'profile' => LocaleKeys.workspaceNovelOverview,
     'canvas' => LocaleKeys.workspaceCanvas,

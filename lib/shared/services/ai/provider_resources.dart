@@ -52,8 +52,7 @@ Map<String, dynamic> providerModelResource(
   final adapterSupportsModel = kind == 'chat'
       ? provider.supportsModelKind(AiModelKind.chat)
       : kind == 'image'
-      ? ProductionImageCapabilities.supports(provider) &&
-            lookupImageChannelModel(provider.type, model) != null
+      ? ProductionImageCapabilities(provider, model).isSupported
       : capabilities != null;
   final reason = !provider.enabled
       ? 'provider_disabled'
@@ -159,6 +158,7 @@ Map<String, dynamic>? _video(AiProvider provider, String model) {
         if (caps.allowsReferenceMode)
           ...kinds.map((kind) => 'reference_${kind.name}'),
       ],
+      'max_middle_frames': caps.maxMiddleFrames,
       'max_references': caps.maxReferences,
       'max_prompt_characters': caps.maxPromptCharacters,
       'supports_audio_only_reference': caps.supportsAudioOnlyReference,

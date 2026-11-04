@@ -34,6 +34,7 @@ enum AiProviderType {
   codex,
   openai_compatible,
   api88,
+  ooki,
   openrouter,
   xai,
   anthropic,
@@ -68,6 +69,7 @@ enum ModelIdSource {
 class AiProviderTypeConfig {
   final String displayName;
   final bool fixedBaseUrl;
+  final bool usesNewApi;
   final ModelIdSource modelIdSource;
   final ImageProtocol? imageProtocol;
   final VideoProtocol? videoProtocol;
@@ -84,6 +86,7 @@ class AiProviderTypeConfig {
     this.videoProtocol,
     this.audioProtocol,
     this.fixedBaseUrl = false,
+    this.usesNewApi = false,
   });
 
   Set<AiModelKind> get supportedModelKinds => {
@@ -137,6 +140,17 @@ const Map<AiProviderType, AiProviderTypeConfig> aiProviderTypeConfigs = {
     videoProtocol: VideoProtocol.new_api_video,
     audioProtocol: AudioProtocol.new_api_speech,
     fixedBaseUrl: true,
+    usesNewApi: true,
+  ),
+  AiProviderType.ooki: AiProviderTypeConfig(
+    displayName: 'OOKiAPI',
+    modelIdSource: ModelIdSource.open,
+    textModelKinds: _chatOnlyKinds,
+    imageProtocol: ImageProtocol.new_api_images,
+    videoProtocol: VideoProtocol.new_api_video,
+    audioProtocol: AudioProtocol.new_api_speech,
+    fixedBaseUrl: true,
+    usesNewApi: true,
   ),
   AiProviderType.openrouter: AiProviderTypeConfig(
     displayName: 'OpenRouter',
@@ -212,6 +226,7 @@ const Map<AiProviderType, AiProviderTypeConfig> aiProviderTypeConfigs = {
   AiProviderType.minimax: AiProviderTypeConfig(
     displayName: 'MiniMax',
     modelIdSource: ModelIdSource.open,
+    textModelKinds: _chatOnlyKinds,
     videoProtocol: VideoProtocol.minimax_video_v2,
     audioProtocol: AudioProtocol.minimax_music,
   ),
@@ -239,6 +254,7 @@ final List<AiProviderType> customAiProviderTypes = List.unmodifiable(
 String aiProviderFixedBaseUrl(AiProviderType type) => switch (type) {
   AiProviderType.metaso => 'https://metaso.cn/api/minimax',
   AiProviderType.api88 => 'https://api.88api.ai/v1',
+  AiProviderType.ooki => 'https://api.ookiapi.com/v1',
   AiProviderType.atlascloud => 'https://api.atlascloud.ai/v1',
   AiProviderType.codex => 'https://chatgpt.com/backend-api/codex',
   AiProviderType.openrouter => 'https://openrouter.ai/api/v1',
@@ -250,6 +266,29 @@ String aiProviderFixedBaseUrl(AiProviderType type) => switch (type) {
 const codexPresetModels = <String>['gpt-6-astra', 'gpt-6-luna', 'gpt-6.1-sol'];
 
 const codexPresetImageModels = <String>['gpt-image-2'];
+
+/// MiniMax 没有公开的模型列表接口，「获取模型」使用这份目录。
+const minimaxPresetChatModels = <String>[
+  'MiniMax-M3',
+  'MiniMax-M2.7',
+  'MiniMax-M2.7-highspeed',
+  'MiniMax-M2.5',
+  'MiniMax-M2.5-highspeed',
+  'MiniMax-M2.1',
+];
+
+/// MiniMax 聊天走官方 Anthropic 兼容入口（`<host>/anthropic`），思考内容以
+/// thinking block 返回；视频、音频仍按原 Base URL 拼 `/v1/...`。
+String minimaxAnthropicBaseUrl(String baseUrl) {
+  var url = baseUrl.trim().replaceFirst(RegExp(r'/+$'), '');
+  if (url.endsWith('/anthropic')) {
+    return url;
+  }
+  if (url.endsWith('/v1')) {
+    url = url.substring(0, url.length - 3);
+  }
+  return '$url/anthropic';
+}
 
 const agnesDefaultBaseUrl = 'https://apihub.agnes-ai.com/v1';
 

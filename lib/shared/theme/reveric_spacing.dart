@@ -180,7 +180,11 @@ class RevericSizes {
   static const double statusDotSizeMobile = 9;
 
   /// 设置页 AI 供应商列表栏宽。
-  static const double settingsProviderListWidth = 200;
+  static const double settingsProviderListWidth = 280;
+
+  /// 添加自定义供应商的类型选择弹层宽度与最大高度（桌面）。
+  static const double providerTypePickerWidth = 320;
+  static const double providerTypePickerMaxHeight = 440;
 
   /// 季管理桌面弹窗宽度。
   static const double screenplaySeasonManagerWidth = 640;
@@ -215,16 +219,6 @@ class RevericSizes {
 
   /// 场次板上相邻两张卡的水平间距。
   static const double screenplaySceneCardGap = 44;
-
-  /// 节拍板单幕列宽度。
-  static const double screenplayActColumnWidth = 260;
-
-  /// 节拍板单幕列弹性拉伸上限 —— 幕少时列宽在最小值到该值之间随窗口
-  /// 伸缩，超过该值不再拉宽，避免单列空状态摊成横幅。
-  static const double screenplayActColumnMaxWidth = 360;
-
-  /// 节拍板末尾「新增一幕」虚线列宽度。
-  static const double screenplayAddActColumnWidth = 120;
 
   /// 大纲正文栏宽度。
   static const double screenplayOutlineMaxWidth = 780;

@@ -53,7 +53,7 @@ import 'spec_panel.dart';
 import 'support.dart';
 import 'upload.dart';
 import 'view/method.dart';
-import '../../widgets/settings/settings_dialog.dart';
+import '../../widgets/agent_management/ai_providers_page.dart';
 
 final _log = AppLogger.forModule('ProductionImage');
 
@@ -387,7 +387,9 @@ class _ImageForm extends HookConsumerWidget {
                           ProductionInputTile(
                             service: service,
                             input: inputs.value[i],
-                            valid: i < (capability?.maxReferences ?? 0),
+                            valid:
+                                capability?.allowsReferenceCount(i + 1) ??
+                                false,
                             onRole: null,
                             onMove: inputs.value.length < 2
                                 ? null

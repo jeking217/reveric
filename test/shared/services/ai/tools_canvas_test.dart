@@ -7,6 +7,8 @@
 // 遵循的 Rules:
 //   .agents/rules/error-handling.md
 
+import 'package:reveric/shared/app_config.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -66,6 +68,42 @@ void main() {
     await db.close();
     await appDb.close();
   });
+
+  if (!ideationCanvasEnabled) {
+    test(
+      'disabled canvas is absent from discovery and rejects tool access',
+      () async {
+        for (final path in ['/canvas', '/canvas/test', '/_schema/canvas']) {
+          final result = await toolManager.executeTool(
+            name: 'Read',
+            input: {'path': path},
+          );
+          expect(result, contains('error'), reason: path);
+        }
+        for (final name in ['Create', 'Write', 'Edit', 'Remove']) {
+          final result = await toolManager.executeTool(
+            name: name,
+            input: {
+              'path': '/canvas/test',
+              'fields': {'name': 'test'},
+              'old_string': 'old',
+              'new_string': 'new',
+            },
+          );
+          expect(result, contains('error'), reason: name);
+        }
+        final schema = await toolManager.executeTool(
+          name: 'Read',
+          input: {'path': '/_schema'},
+        );
+        expect(
+          (schema['entries'] as List).cast<Map>().map((e) => e['collection']),
+          isNot(contains('canvas')),
+        );
+      },
+    );
+    return;
+  }
 
   // ---- 资源造数 helpers ----
 
@@ -918,7 +956,7 @@ void main() {
       );
       expect(cleared['updated'], true);
       expect((await read(path))['value'], '');
-      expect((await write(path, value: ''))['updated'], true);
+      expect((await write(path, value: ''))['updated'], false);
       expect((await read(path))['value'], '');
     });
 
@@ -1633,13 +1671,16 @@ void main() {
 
       final page2 = await read('canvas/c/nodes', offset: 2, limit: 2);
       expect(page2['total'], 5);
-      expect(page2['offset'], 2);
+      expect(page2, isNot(contains('offset')));
+      expect(page2['next_offset'], 4);
       expect(page2['limit'], 2);
       expect(page2['has_more'], isTrue);
       expect((page2['entries'] as List), hasLength(2));
 
       final page3 = await read('canvas/c/nodes', offset: 4, limit: 2);
       expect(page3['has_more'], isFalse);
+      expect(page3, isNot(contains('offset')));
+      expect(page3, isNot(contains('next_offset')));
       expect(page3['total'], 5);
       expect((page3['entries'] as List), hasLength(1));
     });
@@ -2215,7 +2256,7 @@ void main() {
         expect((await read('${selfPath(node)}/content'))['value'], '');
         expect(
           (await write('canvas/c', fields: {'description': ''}))['updated'],
-          true,
+          false,
         );
         expect((await write('canvas/c/layout', value: ' AUTO '))['ok'], true);
       },

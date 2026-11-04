@@ -37,7 +37,6 @@ import '../../../shared/providers/screenplay_providers.dart';
 import '../../../shared/providers/screenplay_workspace_state_provider.dart';
 import '../../../shared/theme/theme.dart';
 import '../../pages/novel_chat_page.dart';
-import 'beats_page.dart';
 import 'shared_content.dart';
 import 'episode_picker_sheet.dart';
 import 'outline_page.dart';
@@ -56,7 +55,6 @@ const mobileScreenplaySectionLabelKeys = <ScreenplayWorkspaceSection, String>{
   ScreenplayWorkspaceSection.scenes: LocaleKeys.screenplayScenes,
   ScreenplayWorkspaceSection.lore: LocaleKeys.workspaceLore,
   ScreenplayWorkspaceSection.outline: LocaleKeys.screenplayOutline,
-  ScreenplayWorkspaceSection.beats: LocaleKeys.screenplayBeats,
   ScreenplayWorkspaceSection.items: LocaleKeys.workspaceItems,
   ScreenplayWorkspaceSection.factions: LocaleKeys.workspaceFactions,
   ScreenplayWorkspaceSection.creatures: LocaleKeys.workspaceCreatures,
@@ -180,7 +178,6 @@ class MobileScreenplayEditorPage extends HookConsumerWidget {
                         {
                               ScreenplayWorkspaceSection.script,
                               ScreenplayWorkspaceSection.outline,
-                              ScreenplayWorkspaceSection.beats,
                               ScreenplayWorkspaceSection.scenes,
                             }.contains(workspace.section) &&
                             episode != null
@@ -195,7 +192,6 @@ class MobileScreenplayEditorPage extends HookConsumerWidget {
                         {
                           ScreenplayWorkspaceSection.script,
                           ScreenplayWorkspaceSection.outline,
-                          ScreenplayWorkspaceSection.beats,
                           ScreenplayWorkspaceSection.scenes,
                         }.contains(workspace.section)
                         ? () => showMobileScreenplayEpisodePicker(
@@ -262,9 +258,7 @@ class _SectionBar extends StatelessWidget {
             return InkWell(
               onTap: () => onSelected(items[index].$1),
               child: Container(
-                margin: const EdgeInsets.symmetric(
-                  vertical: RevericSpacing.sm,
-                ),
+                margin: const EdgeInsets.symmetric(vertical: RevericSpacing.sm),
                 alignment: Alignment.center,
                 padding: const EdgeInsets.symmetric(
                   horizontal: RevericSpacing.sm,
@@ -278,10 +272,9 @@ class _SectionBar extends StatelessWidget {
                 ),
                 child: Text(
                   items[index].$2,
-                  style: RevericTheme.typographyOf(context).uiSemibold
-                      .copyWith(
-                        color: active ? colors.onAccent : colors.textSecondary,
-                      ),
+                  style: RevericTheme.typographyOf(context).uiSemibold.copyWith(
+                    color: active ? colors.onAccent : colors.textSecondary,
+                  ),
                 ),
               ),
             );
@@ -322,9 +315,6 @@ class _MobileScreenplayContent extends StatelessWidget {
       ScreenplayWorkspaceSection.outline => MobileScreenplayOutlinePage(
         novel: novel,
         registerFlush: registerFlush,
-      ),
-      ScreenplayWorkspaceSection.beats => MobileScreenplayBeatsPage(
-        novel: novel,
       ),
       ScreenplayWorkspaceSection.scenes => MobileScreenplayScenesPage(
         novel: novel,
