@@ -67,8 +67,8 @@ class HomeBrandHeader extends StatelessWidget {
   }
 }
 
-/// 标记本体：Unione 云形图案（与 agenticos 同一张图）裁掉文字后的小图标。
-/// 原图底色为白，深色主题下靠圆角白底保持可读。
+/// 标记本体：红色圆角方块里的白色云形与胶片，与 agenticos 的云形同一个来源。
+/// 底色本身就是品牌红，深浅主题下都不用再垫白底。
 class _BrandMark extends StatelessWidget {
   const _BrandMark({required this.size});
 
