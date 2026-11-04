@@ -1,6 +1,6 @@
 // 职责: 修改 Unione 门户地址的通用对话框（登录页与设置页共用）。
 // 关联文件:
-//   lib/shared/widgets/auth/unione_login_page.dart
+//   lib/shared/widgets/auth/unione_login_card.dart
 //   lib/shared/widgets/settings/account_settings_section.dart
 //   lib/shared/providers/unione_auth_providers.dart
 // 遵循的 Rules:

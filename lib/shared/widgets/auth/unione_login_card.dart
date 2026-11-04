@@ -1,49 +1,46 @@
-// 职责: Unione 平台登录页 — 未登录时拦在应用入口，账号密码登录成功后写入本地会话。
+// 职责: Unione 登录表单卡片 — 只渲染表单本体，由入口页决定放在哪张卡片/哪块区域里。
 // 关联文件:
 //   lib/shared/providers/unione_auth_providers.dart
 //   lib/shared/services/unione/unione_auth_client.dart
 //   lib/shared/services/unione/unione_sm2.dart
-//   lib/desktop/widgets/desktop_window_frame.dart
-//   lib/main.dart
+//   lib/desktop/pages/onboarding.dart
+//   lib/mobile/pages/onboarding_page.dart
 // 遵循的 Rules:
 //   .agents/rules/design-system.md
 //   .agents/rules/i18n.md
-//
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../desktop/widgets/desktop_window_frame.dart';
 import '../../components/reveric_button.dart';
 import '../../localization/app_localization.dart';
 import '../../localization/locale_keys.dart';
+import '../../models/unione_session.dart';
 import '../../providers/unione_auth_providers.dart';
 import '../../services/unione/unione_auth_client.dart';
 import '../../services/unione/unione_sm2.dart';
 import '../../theme/theme.dart';
 import 'unione_portal_url_dialog.dart';
 
-const double _kCardWidth = 420;
-
-bool get _isDesktop =>
-    Platform.isWindows || Platform.isMacOS || Platform.isLinux;
-
-/// 登录页：账号、密码与平台图形验证码。
+/// 账号密码登录表单（含平台图形验证码）。
 ///
 /// 密码在提交时先用平台公钥做 SM2 加密，明文不会离开本机；验证码图片通过
 /// `CAPTCHAID` 头与答案绑定，因此由客户端取回后直接显示，提交时把 id 一并带上。
 /// 平台的拒绝原样展示——它比本地任何猜测都清楚问题出在密码、验证码还是锁定。
-class UnioneLoginPage extends ConsumerStatefulWidget {
-  const UnioneLoginPage({super.key});
+class UnioneLoginCard extends ConsumerStatefulWidget {
+  const UnioneLoginCard({super.key, this.onSignedIn});
+
+  /// 登录成功后的收尾（例如把平台身份落成本地资料）。
+  /// 不等待它完成就切换界面会闪一下登录卡，所以这里给的是可等待的回调。
+  final Future<void> Function(UnioneSession session)? onSignedIn;
 
   @override
-  ConsumerState<UnioneLoginPage> createState() => _UnioneLoginPageState();
+  ConsumerState<UnioneLoginCard> createState() => _UnioneLoginCardState();
 }
 
-class _UnioneLoginPageState extends ConsumerState<UnioneLoginPage> {
+class _UnioneLoginCardState extends ConsumerState<UnioneLoginCard> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _captchaController = TextEditingController();
@@ -115,7 +112,10 @@ class _UnioneLoginPageState extends ConsumerState<UnioneLoginPage> {
             captcha: _captcha == null ? null : _captchaController.text.trim(),
             captchaId: _captcha?.captchaId,
           );
-      // 成功后由入口处的会话状态切换到主界面，本页随之卸载。
+      final session = ref.read(unioneSessionProvider).value;
+      if (session != null) {
+        await widget.onSignedIn?.call(session);
+      }
     } on UnioneSm2Exception {
       if (!mounted) return;
       setState(() => _error = context.t(LocaleKeys.authEncryptFailed));
@@ -162,154 +162,104 @@ class _UnioneLoginPageState extends ConsumerState<UnioneLoginPage> {
         ref.watch(unionePortalUrlProvider).value ??
         ref.read(unioneAuthClientProvider).portalUrl;
 
-    final card = Container(
-      width: _kCardWidth,
-      padding: const EdgeInsets.symmetric(
-        horizontal: RevericSpacing.x4l,
-        vertical: RevericSpacing.x4l,
-      ),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(RevericRadius.large),
-        border: Border.all(color: colors.borderSubtle),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const _BrandMark(),
-          const SizedBox(height: RevericSpacing.x3l),
-          Text(
-            context.t(LocaleKeys.authLoginTitle),
-            textAlign: TextAlign.center,
-            style: typo.heading2.copyWith(color: colors.textPrimary),
-          ),
-          const SizedBox(height: RevericSpacing.xs),
-          Text(
-            context.t(LocaleKeys.authLoginSubtitle),
-            textAlign: TextAlign.center,
-            style: typo.uiSmall.copyWith(color: colors.textMuted),
-          ),
-          const SizedBox(height: RevericSpacing.x4l),
-          _FieldLabel(text: context.t(LocaleKeys.authUsernameLabel)),
-          const SizedBox(height: RevericSpacing.xs),
-          _LoginField(
-            controller: _usernameController,
-            hint: context.t(LocaleKeys.authUsernameHint),
-            enabled: !_submitting,
-            onSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: RevericSpacing.lg),
-          _FieldLabel(text: context.t(LocaleKeys.authPasswordLabel)),
-          const SizedBox(height: RevericSpacing.xs),
-          _LoginField(
-            controller: _passwordController,
-            hint: context.t(LocaleKeys.authPasswordHint),
-            obscureText: true,
-            enabled: !_submitting,
-            onSubmitted: (_) => _submit(),
-          ),
-          if (_captcha == null && !_fetchingCaptcha) ...[
-            const SizedBox(height: RevericSpacing.sm),
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton(
-                onPressed: _refreshCaptcha,
-                child: Text(
-                  context.t(LocaleKeys.authCaptchaRefresh),
-                  style: typo.uiSmall.copyWith(color: colors.accent),
-                ),
-              ),
-            ),
-          ],
-          if (_captcha != null) ...[
-            const SizedBox(height: RevericSpacing.lg),
-            _FieldLabel(text: context.t(LocaleKeys.authCaptchaLabel)),
-            const SizedBox(height: RevericSpacing.xs),
-            Row(
-              children: [
-                Expanded(
-                  child: _LoginField(
-                    controller: _captchaController,
-                    hint: context.t(LocaleKeys.authCaptchaHint),
-                    enabled: !_submitting,
-                    onSubmitted: (_) => _submit(),
-                  ),
-                ),
-                const SizedBox(width: RevericSpacing.md),
-                _CaptchaTile(
-                  captcha: _captcha!,
-                  loading: _fetchingCaptcha,
-                  onTap: _refreshCaptcha,
-                ),
-              ],
-            ),
-          ],
-          if (_error.isNotEmpty) ...[
-            const SizedBox(height: RevericSpacing.lg),
-            _ErrorBanner(message: _error),
-          ],
-          const SizedBox(height: RevericSpacing.x3l),
-          RevericButton.primary(
-            label: _submitting
-                ? context.t(LocaleKeys.authLoggingIn)
-                : context.t(LocaleKeys.authLoginAction),
-            loading: _submitting,
-            size: RevericButtonSize.prominent,
-            onPressed: _submitting ? null : _submit,
-          ),
-          const SizedBox(height: RevericSpacing.x2l),
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: _submitting ? null : _editServer,
-              child: Text(
-                '${context.t(LocaleKeys.authServerLabel)} · $portalUrl',
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: typo.uiSmall.copyWith(color: colors.textMuted),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    final body = Center(child: SingleChildScrollView(child: card));
-    return Scaffold(
-      backgroundColor: colors.canvas,
-      body: _isDesktop
-          ? DesktopWindowFrame(child: body)
-          : SafeArea(child: body),
-    );
-  }
-}
-
-/// 品牌标志：与 Unione AI Drama 的应用图标同源（Unione 标志）。
-class _BrandMark extends StatelessWidget {
-  const _BrandMark();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(RevericRadius.large),
-        child: Image.asset(
-          'assets/logo/unione_logo.jpg',
-          width: 88,
-          height: 88,
-          fit: BoxFit.cover,
-          filterQuality: FilterQuality.medium,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          context.t(LocaleKeys.authLoginTitle),
+          textAlign: TextAlign.center,
+          style: typo.heading2.copyWith(color: colors.textPrimary),
         ),
-      ),
+        const SizedBox(height: RevericSpacing.sm),
+        Text(
+          context.t(LocaleKeys.authLoginSubtitle),
+          textAlign: TextAlign.center,
+          style: typo.uiSmall.copyWith(color: colors.textMuted),
+        ),
+        const SizedBox(height: RevericSpacing.x4l),
+        _FieldLabel(text: context.t(LocaleKeys.authUsernameLabel)),
+        const SizedBox(height: RevericSpacing.xs),
+        _LoginField(
+          controller: _usernameController,
+          hint: context.t(LocaleKeys.authUsernameHint),
+          enabled: !_submitting,
+          onSubmitted: (_) => _submit(),
+        ),
+        const SizedBox(height: RevericSpacing.lg),
+        _FieldLabel(text: context.t(LocaleKeys.authPasswordLabel)),
+        const SizedBox(height: RevericSpacing.xs),
+        _LoginField(
+          controller: _passwordController,
+          hint: context.t(LocaleKeys.authPasswordHint),
+          obscureText: true,
+          enabled: !_submitting,
+          onSubmitted: (_) => _submit(),
+        ),
+        if (_captcha == null && !_fetchingCaptcha) ...[
+          const SizedBox(height: RevericSpacing.sm),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton(
+              onPressed: _refreshCaptcha,
+              child: Text(
+                context.t(LocaleKeys.authCaptchaRefresh),
+                style: typo.uiSmall.copyWith(color: colors.accent),
+              ),
+            ),
+          ),
+        ],
+        if (_captcha != null) ...[
+          const SizedBox(height: RevericSpacing.lg),
+          _FieldLabel(text: context.t(LocaleKeys.authCaptchaLabel)),
+          const SizedBox(height: RevericSpacing.xs),
+          Row(
+            children: [
+              Expanded(
+                child: _LoginField(
+                  controller: _captchaController,
+                  hint: context.t(LocaleKeys.authCaptchaHint),
+                  enabled: !_submitting,
+                  onSubmitted: (_) => _submit(),
+                ),
+              ),
+              const SizedBox(width: RevericSpacing.md),
+              _CaptchaTile(
+                captcha: _captcha!,
+                loading: _fetchingCaptcha,
+                onTap: _refreshCaptcha,
+              ),
+            ],
+          ),
+        ],
+        if (_error.isNotEmpty) ...[
+          const SizedBox(height: RevericSpacing.lg),
+          _ErrorBanner(message: _error),
+        ],
+        const SizedBox(height: RevericSpacing.x3l),
+        RevericButton.primary(
+          label: _submitting
+              ? context.t(LocaleKeys.authLoggingIn)
+              : context.t(LocaleKeys.authLoginAction),
+          loading: _submitting,
+          size: RevericButtonSize.prominent,
+          onPressed: _submitting ? null : _submit,
+        ),
+        const SizedBox(height: RevericSpacing.x2l),
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: _submitting ? null : _editServer,
+            child: Text(
+              '${context.t(LocaleKeys.authServerLabel)} · $portalUrl',
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: typo.uiSmall.copyWith(color: colors.textMuted),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

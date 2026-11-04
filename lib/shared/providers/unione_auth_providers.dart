@@ -2,7 +2,7 @@
 // 关联文件:
 //   lib/shared/services/unione/unione_auth_client.dart
 //   lib/shared/services/unione/unione_session_store.dart
-//   lib/shared/widgets/auth/unione_login_page.dart
+//   lib/shared/widgets/auth/unione_login_card.dart
 //   lib/main.dart
 // 遵循的 Rules:
 //   .agents/rules/provider-naming.md

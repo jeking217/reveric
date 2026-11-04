@@ -539,9 +539,27 @@ class MyApp extends ConsumerWidget {
         final lightTheme = settings.themeDataForBrightness(Brightness.light);
         final darkTheme = settings.themeDataForBrightness(Brightness.dark);
 
+        // 入口页 = 登录页：登录表单就长在原来的欢迎页卡片里，不再单独加一屏。
+        // 登录成功、本地资料落库后再让 provider 重新读一次完成标记，界面随之切走。
+        final bool firstRun = onboardingAsync.value == false;
+
+        void handleLocalSetupCompleted() {
+          ref.invalidate(onboardingCompletedProvider);
+        }
+
+        final Widget signedOutHome = _isMobilePlatform
+            ? MobileOnboardingPage(
+                firstRun: firstRun,
+                onCompleted: handleLocalSetupCompleted,
+              )
+            : OnboardingPage(
+                firstRun: firstRun,
+                onCompleted: handleLocalSetupCompleted,
+              );
+
         final Widget signedInHome;
         if (_isMobilePlatform) {
-          // 移动端：走移动端 onboarding（仅填写用户名，无视频），完成后进入移动壳。
+          // 移动端：走移动端入口页（登录表单），完成后进入移动壳。
           signedInHome = onboardingAsync.when(
             loading: () {
               _log.info('MyApp: onboarding loading (mobile)');
@@ -559,9 +577,7 @@ class MyApp extends ConsumerWidget {
               _log.info(
                 'MyApp: onboarding loaded completed=$completed (mobile)',
               );
-              return completed
-                  ? const MobileApp()
-                  : const MobileOnboardingPage();
+              return completed ? const MobileApp() : signedOutHome;
             },
           );
         } else {
@@ -580,13 +596,17 @@ class MyApp extends ConsumerWidget {
             },
             data: (completed) {
               _log.info('MyApp: onboarding loaded completed=$completed');
-              return completed ? const NovelHomePage() : const OnboardingPage();
+              return completed ? const NovelHomePage() : signedOutHome;
             },
           );
         }
 
-        // 登录门禁：本地没有 Unione 会话时先登录，登录过的机器直接进入业务界面。
-        final home = UnioneAuthGate(child: signedInHome);
+        // 登录门禁：本地没有 Unione 会话时停在入口页（登录卡片），
+        // 登录过的机器直接进入业务界面。
+        final home = UnioneAuthGate(
+          signedOut: signedOutHome,
+          child: signedInHome,
+        );
 
         return _buildApp(
           context: context,

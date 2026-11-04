@@ -15,6 +15,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import '../models/unione_session.dart';
 import '../providers/official_skill_sync_providers.dart';
 import '../providers/novel_providers.dart';
 import '../providers/settings_providers.dart';
@@ -28,6 +29,7 @@ class OnboardingSetup {
     required this.defaultsReady,
     required this.saveProfile,
     required this.complete,
+    required this.completeWithSession,
   });
 
   /// 「AI 怎么称呼您」— 本地称呼，与账户用户名无关。
@@ -43,9 +45,16 @@ class OnboardingSetup {
 
   /// 保存资料并标记引导完成；导航由调用方负责。
   final Future<void> Function() complete;
+
+  /// 用 Unione 登录结果补齐本地资料并标记引导完成。
+  ///
+  /// 登录已经是「认证过一次」：本地称呼直接取平台身份，不再让用户重填一遍。
+  final Future<void> Function(UnioneSession session) completeWithSession;
 }
 
-OnboardingSetup useOnboardingSetup(WidgetRef ref) {
+/// [applyDefaults] 只在真正的首次启动为 true：退出登录后入口页会再次出现，
+/// 那时不能再把用户改过的主题和模型默认值重置回初始配置。
+OnboardingSetup useOnboardingSetup(WidgetRef ref, {bool applyDefaults = true}) {
   final context = useContext();
   final settingsNotifier = ref.read(appSettingsProvider.notifier);
   final settingsAsync = ref.watch(appSettingsProvider);
@@ -65,6 +74,10 @@ OnboardingSetup useOnboardingSetup(WidgetRef ref) {
   }, []);
 
   useEffect(() {
+    if (!applyDefaults) {
+      defaultsReady.value = true;
+      return null;
+    }
     () async {
       await settingsNotifier.applyOnboardingDefaults(
         theme: AppTheme.classic,
@@ -112,11 +125,35 @@ OnboardingSetup useOnboardingSetup(WidgetRef ref) {
     await markOnboardingCompleted(ref.read(appDatabaseProvider));
   }
 
+  /// 平台身份即本地称呼：保留用户已改过的称呼，没有才用平台显示名兜底。
+  Future<void> completeWithSession(UnioneSession session) async {
+    final settings = ref.read(appSettingsProvider).asData?.value;
+    final existing = settings?.username.trim() ?? '';
+    if (existing.isEmpty) {
+      await settingsNotifier.setUsername(_localNameFor(session));
+    }
+    await markOnboardingCompleted(ref.read(appDatabaseProvider));
+  }
+
   return OnboardingSetup(
     nameController: nameController,
     avatarPath: avatarPath,
     defaultsReady: defaultsReady.value,
     saveProfile: saveProfile,
     complete: complete,
+    completeWithSession: completeWithSession,
   );
+}
+
+/// 本地称呼沿用「20 字以内」的既有上限，超长的平台姓名截断而不是报错。
+String _localNameFor(UnioneSession session) {
+  final name = session.displayName.trim();
+  if (name.isEmpty) {
+    return session.username;
+  }
+  final runes = name.runes.toList();
+  if (runes.length <= 20) {
+    return name;
+  }
+  return String.fromCharCodes(runes.take(20));
 }
