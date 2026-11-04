@@ -13,7 +13,9 @@ SetupLogging=yes
 SetupIconFile={{SETUP_ICON_FILE}}
 ; 卸载列表与程序与功能里显示的图标，也顺带把自己装在哪里写进注册表：
 ; UnioneAgent 靠这条记录找到本程序，不写时 DisplayIcon 是空的。
-UninstallDisplayIcon={app}\reveric.exe
+; 用随包安装的那份 .ico 而不是 exe 里的资源：Explorer 按路径缓存图标，
+; 同一路径换了资源还可能显示旧图，换个文件名就不会。
+UninstallDisplayIcon={app}\unione.ico
 WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64
@@ -81,10 +83,14 @@ Name: "launchAtStartup"; Description: "{cm:AutoStartApp}"; GroupDescription: "{c
 Source: "..\..\windows\packaging\exe\vc_redist.x64.exe"; Flags: dontcopy
 Source: "{{SOURCE_DIR}}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+; 快捷方式与「程序和功能」用的图标。文件名与安装包、exe 内的资源都不同，
+; 免得 Explorer 拿旧缓存去画。
+Source: "..\..\windows\runner\resources\app_icon.ico"; DestDir: "{app}"; DestName: "unione.ico"; Flags: ignoreversion
+
 [Icons]
-Name: "{autoprograms}\\Unione AI Drama"; Filename: "{app}\\{{EXECUTABLE_NAME}}"
-Name: "{autodesktop}\\Unione AI Drama"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; Tasks: desktopicon
-Name: "{userstartup}\\Unione AI Drama"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; WorkingDir: "{app}"; Tasks: launchAtStartup
+Name: "{autoprograms}\\Unione AI Drama"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; IconFilename: "{app}\unione.ico"
+Name: "{autodesktop}\\Unione AI Drama"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; IconFilename: "{app}\unione.ico"; Tasks: desktopicon
+Name: "{userstartup}\\Unione AI Drama"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; IconFilename: "{app}\unione.ico"; WorkingDir: "{app}"; Tasks: launchAtStartup
 
 [Run]
 Filename: "{app}\\{{EXECUTABLE_NAME}}"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent

@@ -18,20 +18,25 @@ void main() {
   Completer<Object?>? pendingWindowClose;
   Completer<Object?>? pendingTrayDestroy;
   var windowVisible = true;
+  var windowMinimized = false;
 
   setUp(() {
     calls.clear();
     pendingWindowClose = null;
     pendingTrayDestroy = null;
     windowVisible = true;
+    windowMinimized = false;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(windowManagerChannel, (call) async {
           calls.add('window.${call.method}');
           if (call.method == 'isVisible') {
             return windowVisible;
           }
+          if (call.method == 'restore') {
+            windowMinimized = false;
+          }
           if (call.method == 'isMinimized') {
-            return false;
+            return windowMinimized;
           }
           if (call.method == 'close' && pendingWindowClose != null) {
             return pendingWindowClose!.future;
@@ -82,12 +87,55 @@ void main() {
     expect(calls, isNot(contains('window.destroy')));
   });
 
-  test('window activation must verify the native visibility result', () async {
+  test(
+    'window activation waits for the native visibility to settle',
+    () async {
+      // 原生窗口在 show() 之后要过一会儿才真的可见；先报不可见是常态。
+      windowVisible = false;
+      var reads = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(windowManagerChannel, (call) async {
+            calls.add('window.${call.method}');
+            if (call.method == 'isMinimized') {
+              return false;
+            }
+            if (call.method == 'isVisible') {
+              reads++;
+              if (reads > 2) {
+                windowVisible = true;
+              }
+              return windowVisible;
+            }
+            if (call.method == 'close' && pendingWindowClose != null) {
+              return pendingWindowClose!.future;
+            }
+            return true;
+          });
+
+      await SystemTrayService().showMainWindow();
+
+      expect(reads, greaterThan(2));
+      expect(
+        calls,
+        containsAllInOrder(['window.show', 'window.focus', 'window.isVisible']),
+      );
+    },
+  );
+
+  test('a window that never reports visible does not fail activation', () async {
+    // 第二实例的唤起请求会等这个 Future；抛出就是给用户弹「启动失败」。
     windowVisible = false;
-    await expectLater(SystemTrayService().showMainWindow(), throwsStateError);
+    await SystemTrayService().showMainWindow();
+    expect(calls, containsAllInOrder(['window.show', 'window.focus']));
+  });
+
+  test('a minimized window is restored before it is shown', () async {
+    windowMinimized = true;
+    await SystemTrayService().showMainWindow();
+    expect(calls.first, 'window.isMinimized');
     expect(
       calls,
-      containsAllInOrder(['window.show', 'window.focus', 'window.isVisible']),
+      containsAllInOrder(['window.restore', 'window.show', 'window.focus']),
     );
   });
 

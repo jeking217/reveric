@@ -96,14 +96,28 @@ class SystemTrayService with TrayListener {
   }
 
   /// 唤起主窗口：托盘点击、托盘菜单与第二实例激活请求共用。
+  ///
+  /// 原生窗口的状态不是同步更新的：`show()` 返回时 `isVisible` 可能还读到上一
+  /// 帧，刚从最小化恢复时 `isMinimized` 也一样。等它稳定，而不是查一次就判定
+  /// 失败 —— 这条路径同时供第二实例的唤起请求使用，抛异常会让用户看到「启动
+  /// 失败」，而窗口其实已经打开了。
   Future<void> showMainWindow() async {
     _log.checkpoint('showing main window (native)');
+    if (await windowManager.isMinimized()) {
+      await windowManager.restore();
+    }
     await windowManager.show();
     await windowManager.focus();
-    if (!await windowManager.isVisible() || await windowManager.isMinimized()) {
-      throw StateError('Window did not become visible after activation');
+    for (var attempt = 0; attempt < 12; attempt++) {
+      final visible = await windowManager.isVisible();
+      if (visible && !await windowManager.isMinimized()) {
+        _log.checkpoint('main window activation verified (native)');
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 50));
     }
-    _log.checkpoint('main window activation verified (native)');
+    // 窗口已经收到显示请求；这里只留一条日志，不把它升级成启动失败。
+    _log.warning('Main window did not report visible after activation');
   }
 
   void _hideWindow() async {
