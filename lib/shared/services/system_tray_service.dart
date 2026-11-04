@@ -13,10 +13,12 @@
 //   lib/shared/database/novel_content_database.dart
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
 
@@ -25,7 +27,6 @@ import '../database/app_database.dart';
 import '../database/novel_content_database.dart';
 import '../localization/app_localization.dart';
 import '../localization/locale_keys.dart';
-import '../localization/merging_asset_loader.dart';
 import '../logger/app_logger.dart';
 import '../logger/startup_failure_reporter.dart';
 import 'crash_reporting/crash_sentinel.dart';
@@ -66,28 +67,63 @@ class SystemTrayService with TrayListener {
 
   bool _initialized = false;
 
+  /// 菜单是否已成功写进原生托盘；没写进去时右键不会有任何反应。
+  bool _menuInstalled = false;
+
+  /// 当前托盘文案用的语言，用于避免每次校正都重设一遍菜单。
+  Locale? _menuLocale;
+
+  /// 应用启动时的界面语言：`EasyLocalization.startLocale`，与 `main.dart` 一致。
+  /// 启动占位阶段读不到 widget 树，只能先按它装一份菜单。
+  static const Locale _startupLocale = Locale('zh', 'CN');
+
   Future<void> init() async {
     if (_initialized) return;
 
     try {
       await trayManager.setIcon(_iconPath, isTemplate: true);
-      // 托盘名称与语言无关，先写品牌名；菜单要等首帧后拿到界面语言再写入。
       await trayManager.setToolTip(appDisplayName);
 
       await windowManager.setPreventClose(true);
       windowManager.addListener(_WindowCloseListener());
 
       _initialized = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final locale = navigatorKey.currentContext?.locale;
-        if (locale != null) {
-          applyLocale(locale);
-        }
-      });
+      // 右键弹出的是原生菜单，必须在启动阶段就装好。`init()` 早于 `runApp`，
+      // 而 MaterialApp 要等启动页跑完才建，此时 `navigatorKey` 取不到 context；
+      // 若把菜单推迟到首帧后写入，启动期间的右键就没有任何反应。先按启动语言
+      // 装一份，界面挂载后再按真实语言校正。
+      await applyLocale(_startupLocale);
+      _syncLocaleWithUi();
+
       _log.info('System tray initialized');
     } catch (e) {
       _log.warning('Failed to initialize system tray: $e');
     }
+  }
+
+  /// 界面挂载后按真实界面语言校正一次托盘文案。
+  ///
+  /// 启动占位阶段还没有 MaterialApp，只能逐帧等待；拿到带本地化的 context 就
+  /// 停下。语言没变时不重设菜单，避免无谓地重建原生菜单。
+  void _syncLocaleWithUi([int attempt = 0]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_initialized) return;
+      final context = navigatorKey.currentContext;
+      final locale = context == null
+          ? null
+          : Localizations.maybeLocaleOf(context);
+      if (locale != null) {
+        if (locale != _menuLocale) {
+          unawaited(applyLocale(locale));
+        }
+        return;
+      }
+      if (attempt < 600) {
+        _syncLocaleWithUi(attempt + 1);
+      } else {
+        _log.warning('Tray locale was never synced with the UI language');
+      }
+    });
   }
 
   /// 把托盘文案切换成 [locale] 的语言。
@@ -98,26 +134,44 @@ class SystemTrayService with TrayListener {
   /// 仍是旧语言，写进原生托盘就成了错的那一套。
   Future<void> applyLocale(Locale locale) async {
     if (!_initialized) return;
+    _menuLocale = locale;
+    _menuInstalled = false;
     try {
       final catalog = await _catalog(locale);
-      await trayManager.setToolTip(_label(catalog, LocaleKeys.appTitle));
+      // 翻译缺失时宁可留品牌名，也不要让托盘提示显示成 key。
+      await trayManager.setToolTip(
+        catalog.isEmpty ? appDisplayName : _label(catalog, LocaleKeys.appTitle),
+      );
       await _updateMenu(catalog);
+      _menuInstalled = true;
+      _log.info('System tray menu installed (locale=$locale)');
     } catch (e) {
-      _log.warning('Failed to apply system tray locale: $e');
+      _log.warning('Failed to apply system tray locale ($locale): $e');
     }
   }
 
-  /// 各语言的翻译资源，按语言标签缓存；托盘只用到其中极少数几条。
+  /// 各语言的托盘文案，按语言标签缓存。
   final Map<String, Map<String, dynamic>> _catalogs = {};
 
+  /// 只读 `tray` 命名空间：托盘用到的几条文案全在这份文件里，没必要为了装
+  /// 一个原生菜单去合并全部命名空间的翻译（启动阶段尤其贵）。
   Future<Map<String, dynamic>> _catalog(Locale locale) async {
     final tag = locale.toStringWithSeparator(separator: '-');
     final cached = _catalogs[tag];
     if (cached != null) return cached;
-    final loaded =
-        await const MergingAssetLoader().load('assets/translations', locale) ??
-        const <String, dynamic>{};
-    return _catalogs[tag] = loaded;
+    for (final candidate in <String>[tag, 'en']) {
+      try {
+        final raw = await rootBundle.loadString(
+          'assets/translations/$candidate/tray.json',
+        );
+        final parsed = jsonDecode(raw) as Map<String, dynamic>;
+        return _catalogs[tag] = parsed;
+      } catch (_) {
+        continue;
+      }
+    }
+    _log.warning('Missing tray translations for $tag');
+    return _catalogs[tag] = const <String, dynamic>{};
   }
 
   /// 读取一条文案并替换 `{name}` 形式的占位符；缺该 key 时回退成 key 本身，
@@ -414,6 +468,13 @@ class SystemTrayService with TrayListener {
   }
 
   @visibleForTesting
+  void resetForTesting() {
+    _initialized = false;
+    _menuInstalled = false;
+    _menuLocale = null;
+  }
+
+  @visibleForTesting
   Future<void> exitApplicationForTesting(
     void Function(int) terminate, {
     FutureOr<void> Function()? unlock,
@@ -435,7 +496,19 @@ class SystemTrayService with TrayListener {
 
   @override
   void onTrayIconRightMouseDown() {
-    trayManager.popUpContextMenu();
+    if (_menuInstalled) {
+      trayManager.popUpContextMenu();
+      return;
+    }
+    // 菜单没装上就弹出等于什么都不发生，用户只会看到「右键失灵」。先补装再弹，
+    // 把这条路径的失败兜在托盘自己身上。
+    unawaited(
+      applyLocale(_menuLocale ?? _startupLocale).whenComplete(() {
+        if (_menuInstalled) {
+          trayManager.popUpContextMenu();
+        }
+      }),
+    );
   }
 
   @override
