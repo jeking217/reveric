@@ -11,6 +11,9 @@ Compression=lzma
 SolidCompression=yes
 SetupLogging=yes
 SetupIconFile={{SETUP_ICON_FILE}}
+; 卸载列表与程序与功能里显示的图标，也顺带把自己装在哪里写进注册表：
+; UnioneAgent 靠这条记录找到本程序，不写时 DisplayIcon 是空的。
+UninstallDisplayIcon={app}\reveric.exe
 WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64
