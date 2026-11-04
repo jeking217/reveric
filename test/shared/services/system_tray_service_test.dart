@@ -3,6 +3,7 @@
 //   lib/shared/services/system_tray_service.dart
 
 import 'dart:async';
+import 'dart:ui' show Locale;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,9 +20,13 @@ void main() {
   Completer<Object?>? pendingTrayDestroy;
   var windowVisible = true;
   var windowMinimized = false;
+  String? trayTooltip;
+  List<String> trayLabels = const [];
 
   setUp(() {
     calls.clear();
+    trayTooltip = null;
+    trayLabels = const [];
     pendingWindowClose = null;
     pendingTrayDestroy = null;
     windowVisible = true;
@@ -46,6 +51,15 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(trayManagerChannel, (call) async {
           calls.add('tray.${call.method}');
+          if (call.method == 'setToolTip') {
+            trayTooltip = (call.arguments as Map)['toolTip'] as String?;
+          }
+          if (call.method == 'setContextMenu') {
+            final menu = (call.arguments as Map)['menu'] as Map;
+            trayLabels = ((menu['items'] as List?) ?? const [])
+                .map((item) => (item as Map)['label'] as String? ?? '')
+                .toList();
+          }
           if (call.method == 'destroy' && pendingTrayDestroy != null) {
             return pendingTrayDestroy!.future;
           }
@@ -71,6 +85,22 @@ void main() {
       (code) => calls.add('exit.$code'),
     );
     expect(calls, contains('exit.0'));
+  });
+
+  test('tray name, tooltip and menu follow the app language', () async {
+    final service = SystemTrayService();
+    await service.init();
+
+    await service.applyLocale(const Locale('zh', 'CN'));
+
+    expect(trayTooltip, 'Unione AI Drama');
+    expect(trayLabels, containsAll(<String>['新建小说', '隐藏', '显示', '退出']));
+    expect(trayLabels, isNot(contains('New Novel')));
+
+    await service.applyLocale(const Locale('en'));
+
+    expect(trayLabels, containsAll(<String>['New Novel', 'Hide', 'Show', 'Quit']));
+    expect(trayLabels, isNot(contains('新建小说')));
   });
 
   test('tray exit closes the window without invoking destroy', () async {

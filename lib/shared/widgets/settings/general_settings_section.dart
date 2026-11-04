@@ -23,6 +23,7 @@ import '../../localization/app_localization.dart';
 import '../../localization/locale_keys.dart';
 import '../../providers/anonymous_reporting_providers.dart';
 import '../../providers/settings_providers.dart';
+import '../../services/system_tray_service.dart';
 import '../../theme/theme.dart';
 import 'proxy_settings_section.dart';
 import 'settings_section_widgets.dart';
@@ -68,6 +69,8 @@ class _LanguageSection extends ConsumerWidget {
       }
       final settingsNotifier = ref.read(appSettingsProvider.notifier);
       await context.setLocale(nextLocale);
+      // 托盘提示与菜单是原生对象，语言切换后要显式换成新语言的文案。
+      await SystemTrayService().applyLocale(nextLocale);
       await settingsNotifier.setLanguage(
         nextLocale.toLanguageTag().replaceAll('-', '_'),
       );

@@ -11,6 +11,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../app_config.dart';
 import '../logger/app_logger.dart';
 
 final _log = AppLogger.forModule('Notification');
@@ -77,7 +78,7 @@ class SystemNotificationService {
         ),
         linux: LinuxInitializationSettings(defaultActionName: 'Open'),
         windows: WindowsInitializationSettings(
-          appName: 'Reveric',
+          appName: appDisplayName,
           appUserModelId: kDebugMode ? 'ai.reveric.debug' : 'ai.reveric',
           guid: kDebugMode
               ? '30c68781-e02c-4fab-a47e-c94e7d57fa2a'

@@ -1,0 +1,14 @@
+{
+  "tray.new_novel": "New Novel",
+  "tray.about": "About {name}",
+  "tray.about_content": "Version {version}\nAn AI-assisted writing tool",
+  "tray.close": "Close",
+  "tray.hide": "Hide",
+  "tray.show": "Show",
+  "tray.quit": "Quit",
+  "tray.quit_title": "Quit",
+  "tray.quit_message": "Are you sure you want to quit?",
+  "tray.quit_confirm": "Quit",
+  "tray.quit_cancel": "Cancel",
+  "tray.create_failed": "Could not create the novel"
+}

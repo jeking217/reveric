@@ -1,0 +1,14 @@
+{
+  "tray.new_novel": "新建小说",
+  "tray.about": "关于 {name}",
+  "tray.about_content": "版本 {version}\nAI 辅助写作工具",
+  "tray.close": "关闭",
+  "tray.hide": "隐藏",
+  "tray.show": "显示",
+  "tray.quit": "退出",
+  "tray.quit_title": "确认退出",
+  "tray.quit_message": "确定要退出吗？",
+  "tray.quit_confirm": "退出",
+  "tray.quit_cancel": "取消",
+  "tray.create_failed": "创建小说失败"
+}

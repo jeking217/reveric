@@ -65,6 +65,7 @@ class MergingAssetLoader extends AssetLoader {
     'subagent',
     'theater',
     'todo',
+    'tray',
     'workspace',
   ];
 

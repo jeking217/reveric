@@ -5278,6 +5278,19 @@ abstract final class LocaleKeys {
   static const todoPanelTitle = 'todo.panel_title';
   static const todoToolCardTitle = 'todo.tool_card_title';
   static const todoRemaining = 'todo.remaining';
+  // ── tray ────────────────────────────────────────
+  static const trayNewNovel = 'tray.new_novel';
+  static const trayAbout = 'tray.about';
+  static const trayAboutContent = 'tray.about_content';
+  static const trayClose = 'tray.close';
+  static const trayHide = 'tray.hide';
+  static const trayShow = 'tray.show';
+  static const trayQuit = 'tray.quit';
+  static const trayQuitTitle = 'tray.quit_title';
+  static const trayQuitMessage = 'tray.quit_message';
+  static const trayQuitConfirm = 'tray.quit_confirm';
+  static const trayQuitCancel = 'tray.quit_cancel';
+  static const trayCreateFailed = 'tray.create_failed';
   // ── workspace ────────────────────────────────────────
   static const workspaceAddChapter = 'workspace.add_chapter';
   static const workspaceAddChapterOrVolume = 'workspace.add_chapter_or_volume';

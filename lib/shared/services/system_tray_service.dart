@@ -15,6 +15,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -22,6 +23,9 @@ import 'package:tray_manager/tray_manager.dart';
 import '../components/dialog_feedback.dart';
 import '../database/app_database.dart';
 import '../database/novel_content_database.dart';
+import '../localization/app_localization.dart';
+import '../localization/locale_keys.dart';
+import '../localization/merging_asset_loader.dart';
 import '../logger/app_logger.dart';
 import '../logger/startup_failure_reporter.dart';
 import 'crash_reporting/crash_sentinel.dart';
@@ -67,29 +71,87 @@ class SystemTrayService with TrayListener {
 
     try {
       await trayManager.setIcon(_iconPath, isTemplate: true);
-      await trayManager.setToolTip('Reveric');
-      await _updateMenu();
+      // 托盘名称与语言无关，先写品牌名；菜单要等首帧后拿到界面语言再写入。
+      await trayManager.setToolTip(appDisplayName);
 
       await windowManager.setPreventClose(true);
       windowManager.addListener(_WindowCloseListener());
 
       _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final locale = navigatorKey.currentContext?.locale;
+        if (locale != null) {
+          applyLocale(locale);
+        }
+      });
       _log.info('System tray initialized');
     } catch (e) {
       _log.warning('Failed to initialize system tray: $e');
     }
   }
 
-  Future<void> _updateMenu() async {
+  /// 把托盘文案切换成 [locale] 的语言。
+  ///
+  /// 托盘提示与菜单是原生对象，不会随 Flutter 重建自动刷新，必须显式写入。
+  /// 文案直接从该语言的翻译资源读取，不走全局 `tr()`：easy_localization 的
+  /// 全局实例要等 widget 树用新语言重建后才更新，而语言切换的调用点拿到的
+  /// 仍是旧语言，写进原生托盘就成了错的那一套。
+  Future<void> applyLocale(Locale locale) async {
+    if (!_initialized) return;
+    try {
+      final catalog = await _catalog(locale);
+      await trayManager.setToolTip(_label(catalog, LocaleKeys.appTitle));
+      await _updateMenu(catalog);
+    } catch (e) {
+      _log.warning('Failed to apply system tray locale: $e');
+    }
+  }
+
+  /// 各语言的翻译资源，按语言标签缓存；托盘只用到其中极少数几条。
+  final Map<String, Map<String, dynamic>> _catalogs = {};
+
+  Future<Map<String, dynamic>> _catalog(Locale locale) async {
+    final tag = locale.toStringWithSeparator(separator: '-');
+    final cached = _catalogs[tag];
+    if (cached != null) return cached;
+    final loaded =
+        await const MergingAssetLoader().load('assets/translations', locale) ??
+        const <String, dynamic>{};
+    return _catalogs[tag] = loaded;
+  }
+
+  /// 读取一条文案并替换 `{name}` 形式的占位符；缺该 key 时回退成 key 本身，
+  /// 与 easy_localization 的行为一致。
+  String _label(
+    Map<String, dynamic> catalog,
+    String key, [
+    Map<String, String> args = const {},
+  ]) {
+    var value = catalog[key] as String? ?? key;
+    for (final entry in args.entries) {
+      value = value.replaceAll('{${entry.key}}', entry.value);
+    }
+    return value;
+  }
+
+  Future<void> _updateMenu(Map<String, dynamic> catalog) async {
     final menu = Menu(
       items: [
-        MenuItem(key: 'newNovel', label: '新建小说'),
-        MenuItem(key: 'about', label: '关于 Reveric'),
+        MenuItem(
+          key: 'newNovel',
+          label: _label(catalog, LocaleKeys.trayNewNovel),
+        ),
+        MenuItem(
+          key: 'about',
+          label: _label(catalog, LocaleKeys.trayAbout, {
+            'name': appDisplayName,
+          }),
+        ),
         MenuItem.separator(),
-        MenuItem(key: 'hide', label: '隐藏'),
-        MenuItem(key: 'show', label: '显示'),
+        MenuItem(key: 'hide', label: _label(catalog, LocaleKeys.trayHide)),
+        MenuItem(key: 'show', label: _label(catalog, LocaleKeys.trayShow)),
         MenuItem.separator(),
-        MenuItem(key: 'quit', label: '退出'),
+        MenuItem(key: 'quit', label: _label(catalog, LocaleKeys.trayQuit)),
       ],
     );
     await trayManager.setContextMenu(menu);
@@ -175,9 +237,9 @@ class SystemTrayService with TrayListener {
                   return true;
                 } catch (e) {
                   if (!ctx.mounted) return false;
-                  ScaffoldMessenger.of(
-                    ctx,
-                  ).showSnackBar(const SnackBar(content: Text('创建小说失败')));
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text(ctx.t(LocaleKeys.trayCreateFailed))),
+                  );
                   return false;
                 }
               },
@@ -197,10 +259,15 @@ class SystemTrayService with TrayListener {
       builder: (ctx) {
         return RevericDialog(
           title: appDisplayName,
-          content: Text('版本 1.0.0\nAI 辅助写作工具'),
+          content: Text(
+            ctx.t(
+              LocaleKeys.trayAboutContent,
+              namedArgs: {'version': appVersion},
+            ),
+          ),
           actions: [
             RevericButton.secondary(
-              label: '关闭',
+              label: ctx.t(LocaleKeys.trayClose),
               onPressed: () => Navigator.of(ctx).pop(),
             ),
           ],
@@ -220,10 +287,10 @@ class SystemTrayService with TrayListener {
 
     final confirmed = await showConfirmDialog(
       ctx,
-      title: '确认退出',
-      message: '确定要退出吗？',
-      confirmLabel: '退出',
-      cancelLabel: '取消',
+      title: ctx.t(LocaleKeys.trayQuitTitle),
+      message: ctx.t(LocaleKeys.trayQuitMessage),
+      confirmLabel: ctx.t(LocaleKeys.trayQuitConfirm),
+      cancelLabel: ctx.t(LocaleKeys.trayQuitCancel),
       variant: ConfirmDialogVariant.warning,
     );
 
