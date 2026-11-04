@@ -55,11 +55,11 @@ const ideationCanvasEnabled = bool.fromEnvironment(
   defaultValue: false,
 );
 
-/// Unione 平台门户地址，含 context path：`http://host:8080/portal`，不是网关。
+/// Unione 平台门户地址，含 context path：`https://host/portal`，不是网关。
 /// 登录页允许就地修改并保存在本地，这里只是首次启动时的默认值。
 const unioneDefaultPortalUrl = String.fromEnvironment(
   'UNIONE_PORTAL_URL',
-  defaultValue: 'http://192.168.56.1/portal',
+  defaultValue: 'https://online.unione.cloud/portal',
 );
 
 /// Unione 登录表单加密密码用的 SM2 公钥（十六进制，04 开头）。

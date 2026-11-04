@@ -218,7 +218,7 @@ keyPassword=YOUR_KEY_PASSWORD
 
 ```sh
 fvm flutter run -d windows \
-  --dart-define=UNIONE_PORTAL_URL=http://192.168.56.1/portal \
+  --dart-define=UNIONE_PORTAL_URL=https://online.unione.cloud/portal \
   --dart-define=UNIONE_SM2_PUBLIC_KEY=04...
 ```
 
