@@ -3,7 +3,7 @@ AppId={{APP_ID}}
 AppVersion={{APP_VERSION}}
 AppName={cm:AppDisplayName}
 AppPublisher={{PUBLISHER_NAME}}
-DefaultDirName={autopf}\Reveric
+DefaultDirName={autopf}\Unione AI Drama
 DisableProgramGroupPage=yes
 OutputDir=.
 OutputBaseFilename={{OUTPUT_BASE_FILENAME}}
@@ -15,6 +15,13 @@ WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
+; 安装包自己的文件属性页。不写时 Inno 会把 FileVersion 填成 “X”，右键属性里
+; 看不到产品名，和开始菜单、卸载列表里的名字对不上。
+VersionInfoCompany={{PUBLISHER_NAME}}
+VersionInfoDescription=Unione AI Drama Setup
+VersionInfoProductName=Unione AI Drama
+VersionInfoProductVersion={{APP_VERSION}}
+VersionInfoVersion={{APP_VERSION}}
 
 [Languages]
 {% for locale in LOCALES %}
@@ -46,20 +53,20 @@ ArchitecturesInstallIn64BitMode=x64
 {% endfor %}
 
 [CustomMessages]
-AppDisplayName=Reveric
-chinesesimplified.AppDisplayName=幻界
-LaunchApp=Launch Reveric
-chinesesimplified.LaunchApp=启动 幻界
-AutoStartApp=Start Reveric when Windows starts
-chinesesimplified.AutoStartApp=Windows 启动时自动启动 幻界
+AppDisplayName=Unione AI Drama
+chinesesimplified.AppDisplayName=Unione AI Drama
+LaunchApp=Launch Unione AI Drama
+chinesesimplified.LaunchApp=启动 Unione AI Drama
+AutoStartApp=Start Unione AI Drama when Windows starts
+chinesesimplified.AutoStartApp=Windows 启动时自动启动 Unione AI Drama
 PreparingRuntime=Checking and installing Microsoft Visual C++ runtime...
 chinesesimplified.PreparingRuntime=正在检查并安装 Microsoft Visual C++ 运行库…
 RuntimeFailed=Microsoft Visual C++ runtime could not be installed or verified. Restart Windows and try again. If this continues, send the following log files to support:
 chinesesimplified.RuntimeFailed=Microsoft Visual C++ 运行库安装或检查失败。请重启 Windows 后重试；如果仍然失败，请将以下日志文件发送给客服：
 RuntimeRepairNewer=A newer Microsoft Visual C++ runtime is installed, but required DLL files are missing or unreadable. Open Windows Settings > Apps, repair Microsoft Visual C++ Redistributable (x64), then run this installer again.
 chinesesimplified.RuntimeRepairNewer=电脑已安装更高版本的 Microsoft Visual C++ 运行库，但必要的 DLL 文件缺失或无法读取。请在 Windows 设置的应用列表中修复 Microsoft Visual C++ Redistributable (x64)，然后重新运行本安装程序。
-RuntimeRestart=Microsoft Visual C++ runtime requires a restart. Restart Windows, then run this installer again to finish installing Reveric.
-chinesesimplified.RuntimeRestart=Microsoft Visual C++ 运行库需要重启才能完成配置。请重启 Windows，然后重新运行本安装程序以完成幻界的安装。
+RuntimeRestart=Microsoft Visual C++ runtime requires a restart. Restart Windows, then run this installer again to finish installing Unione AI Drama.
+chinesesimplified.RuntimeRestart=Microsoft Visual C++ 运行库需要重启才能完成配置。请重启 Windows，然后重新运行本安装程序以完成 Unione AI Drama 的安装。
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
@@ -72,9 +79,9 @@ Source: "..\..\windows\packaging\exe\vc_redist.x64.exe"; Flags: dontcopy
 Source: "{{SOURCE_DIR}}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\\Reveric"; Filename: "{app}\\{{EXECUTABLE_NAME}}"
-Name: "{autodesktop}\\Reveric"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; Tasks: desktopicon
-Name: "{userstartup}\\Reveric"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; WorkingDir: "{app}"; Tasks: launchAtStartup
+Name: "{autoprograms}\\Unione AI Drama"; Filename: "{app}\\{{EXECUTABLE_NAME}}"
+Name: "{autodesktop}\\Unione AI Drama"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; Tasks: desktopicon
+Name: "{userstartup}\\Unione AI Drama"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; WorkingDir: "{app}"; Tasks: launchAtStartup
 
 [Run]
 Filename: "{app}\\{{EXECUTABLE_NAME}}"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent

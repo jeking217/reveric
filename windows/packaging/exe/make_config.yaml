@@ -1,7 +1,7 @@
 app_id: ai.reveric
-publisher: Reveric
+publisher: Unione
 publisher_url: ""
-display_name: Reveric
+display_name: Unione AI Drama
 create_desktop_icon: true
 setup_icon_file: windows\runner\resources\app_icon.ico
 locales:
