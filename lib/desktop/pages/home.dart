@@ -79,6 +79,7 @@ import '../widgets/desktop_save_shortcut.dart';
 import '../widgets/novel_create_submitter.dart';
 import '../widgets/novel_form_dialog.dart';
 import '../widgets/novel_import_dialog.dart';
+import '../widgets/home/home_brand_header.dart';
 import '../widgets/home/library_home_panel.dart';
 import '../widgets/settings/settings_dialog.dart';
 import '../widgets/agent_management/subagent_edit_panel.dart';
@@ -1055,7 +1056,8 @@ class NovelHomePage extends HookConsumerWidget {
       ),
       child: Column(
         children: [
-          SizedBox(height: DesktopWindowFrame.sidebarTopInset),
+          // 品牌栏占标题栏覆盖区，替代原来只有留白的 SizedBox。
+          const HomeBrandHeader(),
           // 作品搜索在书库作品区那一行（只搜当前集合），侧栏不再放。
           const SizedBox(height: RevericSpacing.md),
           Expanded(
