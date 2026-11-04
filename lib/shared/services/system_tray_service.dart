@@ -34,6 +34,7 @@ import '../../desktop/pages/workspace_editor_page.dart';
 import '../components/reveric_dialog.dart';
 import '../widgets/confirm_dialog.dart';
 import '../components/reveric_button.dart';
+import '../app_config.dart';
 
 final _log = AppLogger.forModule('SystemTray');
 
@@ -46,9 +47,9 @@ class SystemTrayService with TrayListener {
 
   static String get _iconPath {
     if (Platform.isWindows) {
-      return 'assets/logo/reveric_mark_32.ico';
+      return 'assets/logo/unione_mark_32.ico';
     }
-    return 'assets/logo/reveric_mark_32.png';
+    return 'assets/logo/unione_mark_32.png';
   }
 
   static final SystemTrayService _instance = SystemTrayService._internal();
@@ -181,7 +182,7 @@ class SystemTrayService with TrayListener {
       context: context,
       builder: (ctx) {
         return RevericDialog(
-          title: 'Reveric',
+          title: appDisplayName,
           content: Text('版本 1.0.0\nAI 辅助写作工具'),
           actions: [
             RevericButton.secondary(

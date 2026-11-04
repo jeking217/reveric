@@ -8,7 +8,7 @@ releases:
           platform: macos
           channel: arm64
           hooks:
-            pre: 'python3 macos/architectures.py "$BUILD_OUTPUT_DIRECTORY/Reveric.app"'
+            pre: 'python3 macos/architectures.py "$BUILD_OUTPUT_DIRECTORY/Unione AI Drama.app"'
           target: dmg
           build_args:
             release: true
@@ -17,7 +17,7 @@ releases:
           platform: macos
           channel: arm64
           hooks:
-            pre: 'python3 macos/architectures.py "$BUILD_OUTPUT_DIRECTORY/Reveric.app"'
+            pre: 'python3 macos/architectures.py "$BUILD_OUTPUT_DIRECTORY/Unione AI Drama.app"'
           target: zip
           build_args:
             release: true

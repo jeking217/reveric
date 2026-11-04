@@ -144,14 +144,14 @@ build-macos: ## 构建 macOS 客户端 (debug)
 	@bash third/fjs/tool/build_runtime.sh
 	@bash third/fvp/macos/setup.sh
 	@fvm flutter build macos --debug
-	@echo "✅ macOS 构建完成: $(BUILD_DIR)/macos/Build/Products/Debug/Reveric.app"
+	@echo "✅ macOS 构建完成: $(BUILD_DIR)/macos/Build/Products/Debug/Unione AI Drama.app"
 
 build-macos-release: ## 构建 macOS 客户端 (release)
 	@echo "🍎 构建 macOS 客户端 (release)..."
 	@bash third/fjs/tool/build_runtime.sh
 	@bash third/fvp/macos/setup.sh
 	@fvm flutter build macos --release
-	@echo "✅ macOS 构建完成: $(BUILD_DIR)/macos/Build/Products/Release/Reveric.app"
+	@echo "✅ macOS 构建完成: $(BUILD_DIR)/macos/Build/Products/Release/Unione AI Drama.app"
 
 build-windows: ## 构建 Windows 客户端 (debug)
 	@echo "🪟 构建 Windows 客户端 (debug)..."

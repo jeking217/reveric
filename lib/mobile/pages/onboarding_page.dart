@@ -27,6 +27,7 @@ import '../../shared/theme/theme.dart';
 import '../../shared/utils/avatar_storage.dart';
 import '../../shared/utils/storage_paths.dart';
 import '../app.dart';
+import '../../shared/app_config.dart';
 
 final _log = AppLogger.forModule('MobileOnboarding');
 
@@ -127,7 +128,7 @@ class MobileOnboardingPage extends HookConsumerWidget {
                       text: '${context.t(LocaleKeys.onboardingBrandWelcome)} ',
                     ),
                     TextSpan(
-                      text: 'Reveric',
+                      text: appDisplayName,
                       style: typo.display.copyWith(
                         color: colors.accentWarm,
                         fontWeight: FontWeight.w800,

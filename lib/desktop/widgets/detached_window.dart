@@ -27,6 +27,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../shared/logger/app_logger.dart';
 import '../../shared/providers/settings_providers.dart';
 import '../../shared/theme/theme.dart';
+import '../../shared/app_config.dart';
 
 @visibleForTesting
 typedef DetachedWindowPlacement = ({Size size, Offset? position});
@@ -595,7 +596,7 @@ class _DetachedWindowApp extends StatelessWidget {
     };
 
     return MaterialApp(
-      title: 'Reveric',
+      title: appDisplayName,
       debugShowCheckedModeBanner: false,
       theme: light.toThemeData(),
       darkTheme: dark.toThemeData(),

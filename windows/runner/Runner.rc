@@ -67,7 +67,7 @@ IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
 
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE           "Reveric"
+    IDS_APP_TITLE           "Unione AI Drama"
 END
 
 
@@ -105,10 +105,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
+            // 展示名用 Unione AI Drama；ProductName 保持 Reveric 不变：
+            // path_provider 用 CompanyName\ProductName 定位 %APPDATA% 数据目录，
+            // 改了会让升级后的应用看不到既有作品与设置。
             VALUE "CompanyName", APPLICATION_ID "\0"
-            VALUE "FileDescription", "Reveric" "\0"
+            VALUE "FileDescription", "Unione AI Drama" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "Reveric" "\0"
+            VALUE "InternalName", "Unione AI Drama" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 ai.reveric. All rights reserved." "\0"
             VALUE "OriginalFilename", "reveric.exe" "\0"
             VALUE "ProductName", "Reveric" "\0"
@@ -117,23 +120,23 @@ BEGIN
         BLOCK "080404b0"
         BEGIN
             VALUE "CompanyName", APPLICATION_ID "\0"
-            VALUE "FileDescription", "幻界" "\0"
+            VALUE "FileDescription", "Unione AI Drama" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "Reveric" "\0"
+            VALUE "InternalName", "Unione AI Drama" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 ai.reveric. All rights reserved." "\0"
             VALUE "OriginalFilename", "reveric.exe" "\0"
-            VALUE "ProductName", "幻界" "\0"
+            VALUE "ProductName", "Reveric" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
         BLOCK "040404b0"
         BEGIN
             VALUE "CompanyName", APPLICATION_ID "\0"
-            VALUE "FileDescription", "幻界" "\0"
+            VALUE "FileDescription", "Unione AI Drama" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "Reveric" "\0"
+            VALUE "InternalName", "Unione AI Drama" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 ai.reveric. All rights reserved." "\0"
             VALUE "OriginalFilename", "reveric.exe" "\0"
-            VALUE "ProductName", "幻界" "\0"
+            VALUE "ProductName", "Reveric" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
@@ -154,7 +157,7 @@ LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
 
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE           "幻界"
+    IDS_APP_TITLE           "Unione AI Drama"
 END
 
 #endif    // Chinese (Simplified) resources
@@ -168,7 +171,7 @@ LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL
 
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE           "幻界"
+    IDS_APP_TITLE           "Unione AI Drama"
 END
 
 #endif    // Chinese (Traditional) resources

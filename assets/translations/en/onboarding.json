@@ -1,5 +1,5 @@
 {
-  "onboarding.title": "Welcome to Reveric",
+  "onboarding.title": "Welcome to Unione AI Drama",
   "onboarding.welcome": "Let's set up your writing assistant",
   "onboarding.language_title": "Choose Language",
   "onboarding.language_description": "Select your preferred interface language. You can change this later in settings.",
@@ -15,7 +15,7 @@
   "onboarding.step": "Step {current} of {total}",
   "onboarding.creating_demo": "Creating demo novel",
   "onboarding.user_profile_title": "Your Profile",
-  "onboarding.user_profile_description": "Set your display name and avatar to personalize Reveric.",
+  "onboarding.user_profile_description": "Set your display name and avatar to personalize Unione AI Drama.",
   "onboarding.username_label": "What should AI call you?",
   "onboarding.username_hint": "Enter a name",
   "onboarding.avatar_label": "Avatar",

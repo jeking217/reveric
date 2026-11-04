@@ -12,6 +12,10 @@
 /// 供需要同步获取版本号的场景使用（如匿名上报），避免 PackageInfo 异步调用。
 const appVersion = '0.7.0';
 
+/// 产品展示名。窗口标题、安装包元数据与界面文案统一使用它。
+/// 可执行文件名仍为 `reveric.exe`，构建、更新与单实例链路都依赖该文件名。
+const appDisplayName = 'Unione AI Drama';
+
 /// 匿名诊断接收地址，包含完整路径；请求不追加业务 API 后缀。
 /// 为空表示本构建不接匿名诊断：不上报，也不展示 opt-in 入口。
 const anonymousReportingBaseUrl = '';
@@ -49,4 +53,21 @@ const diagnosticsBaseUrl = 'https://diagnostics.reveric.app';
 const ideationCanvasEnabled = bool.fromEnvironment(
   'ENABLE_IDEATION_CANVAS',
   defaultValue: false,
+);
+
+/// Unione 平台门户地址，含 context path：`http://host:8080/portal`，不是网关。
+/// 登录页允许就地修改并保存在本地，这里只是首次启动时的默认值。
+const unioneDefaultPortalUrl = String.fromEnvironment(
+  'UNIONE_PORTAL_URL',
+  defaultValue: 'http://192.168.56.1/portal',
+);
+
+/// Unione 登录表单加密密码用的 SM2 公钥（十六进制，04 开头）。
+/// 默认值与平台内置的 `secret.soft.sm2keys` 一致；平台轮换密钥后用
+/// `--dart-define=UNIONE_SM2_PUBLIC_KEY=...` 覆盖。
+const unioneSm2PublicKey = String.fromEnvironment(
+  'UNIONE_SM2_PUBLIC_KEY',
+  defaultValue:
+      '04a684d7140aebfc83515a2312dac7ab836f3adc484627971b6936ad7d5575048c'
+      'aecf9c7eb07ed4dcee9d04cb3a7b1c514477b646b1ebe8245de215733baa5133',
 );

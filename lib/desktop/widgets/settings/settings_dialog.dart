@@ -29,6 +29,7 @@ import '../../../shared/localization/locale_keys.dart';
 import '../../../shared/providers/settings_providers.dart';
 import '../../../shared/theme/theme.dart';
 import '../../../shared/widgets/settings/about_settings_section.dart';
+import '../../../shared/widgets/settings/account_settings_section.dart';
 import '../../../shared/widgets/settings/appearance_settings_section.dart';
 import '../../../shared/widgets/settings/debug_settings_section.dart';
 import '../../../shared/widgets/settings/editor_settings_section.dart';
@@ -79,6 +80,11 @@ class SettingsDialog extends HookConsumerWidget {
   });
 
   static const _baseNavItems = [
+    _SettingsNavItem(
+      id: 'account',
+      labelKey: LocaleKeys.settingsAccount,
+      icon: RevericIcons.person_outline,
+    ),
     _SettingsNavItem(
       id: 'general',
       labelKey: LocaleKeys.settingsGeneral,
@@ -369,6 +375,7 @@ class SettingsDialog extends HookConsumerWidget {
     VoidCallback onCloseDebugSection,
   ) {
     return switch (selectedId) {
+      'account' => const AccountSettingsSection(),
       'general' => const _GeneralSettingsSection(),
       'appearance' => const _AppearanceSettingsSection(),
       'remote' => _RemoteSettingsSection(),

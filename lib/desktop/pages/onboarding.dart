@@ -32,6 +32,7 @@ import '../../shared/widgets/app_background.dart';
 import '../../shared/widgets/brand_loader.dart';
 import '../widgets/desktop_window_frame.dart';
 import 'home.dart';
+import '../../shared/app_config.dart';
 
 final _log = AppLogger.forModule('Onboarding');
 
@@ -626,7 +627,7 @@ class _WelcomeBlock extends StatelessWidget {
                 text: '${context.t(LocaleKeys.onboardingBrandWelcome)} ',
               ),
               TextSpan(
-                text: 'Reveric',
+                text: appDisplayName,
                 style: titleStyle.copyWith(color: colors.accentWarm),
               ),
             ],

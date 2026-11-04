@@ -1,6 +1,6 @@
 # 开发与构建
 
-本指南面向从源码运行和打包 Reveric 的开发者。支持 Windows、macOS、Android；桌面应用需要在对应操作系统上构建。当前发布架构为 macOS arm64、Windows x64、Android arm64-v8a。
+本指南面向从源码运行和打包 Unione AI Drama 的开发者。支持 Windows、macOS、Android；桌面应用需要在对应操作系统上构建。当前发布架构为 macOS arm64、Windows x64、Android arm64-v8a。
 
 除特别注明外，命令均在仓库根目录执行。本地 Flutter 命令统一使用 `fvm flutter`，避免误用系统 PATH 中的其他 SDK。
 
@@ -84,15 +84,15 @@ make build-macos-release
 
 构建结果位于：
 
-- Debug：`build/macos/Build/Products/Debug/Reveric.app`
-- Release：`build/macos/Build/Products/Release/Reveric.app`
+- Debug：`build/macos/Build/Products/Debug/Unione AI Drama.app`
+- Release：`build/macos/Build/Products/Release/Unione AI Drama.app`
 
 排查 FJS 产物时，可单独执行：
 
 ```sh
 bash third/fjs/tool/build_runtime.sh
 bash third/fjs/tool/build_runtime.sh --verify
-bash third/fjs/tool/build_runtime.sh --verify-app build/macos/Build/Products/Debug/Reveric.app
+bash third/fjs/tool/build_runtime.sh --verify-app "build/macos/Build/Products/Debug/Unione AI Drama.app"
 ```
 
 项目禁用了上游 FJS 预编译包下载，归档从当前源码生成，并校验源码、工具链和校验和。原生构建失败时应处理实际错误，不要换用上游二进制绕过。
@@ -204,6 +204,30 @@ keyPassword=YOUR_KEY_PASSWORD
 ```
 
 相对的 `storeFile` 从 `android/` 解析。签名文件和密码不入库，并持续使用同一签名以支持覆盖升级。未配置时，本地 Release 构建会使用 Debug 签名，只适合本机测试；CI 发布要求配置对应的 Android 签名 secrets。
+
+## Unione 平台登录
+
+应用启动后先校验本地登录态：有会话直接进入工作台，没有会话则显示 Unione 登录页，账号密码通过 Unione 门户鉴权。
+
+- 密码在设备本地用平台 SM2 公钥加密（SM2/SM3 纯 Dart 实现），明文不出本机；图形验证码直接向门户取图，按 `CAPTCHAID` 回传。
+- 登录成功后会话（令牌、用户、租户、时间）写入 `shared_preferences` 的 `unione.session.v1`，重启无需重复登录。
+- 门户拒绝时直接展示平台返回的中文提示（如密码错误、账号锁定）；网络层失败与凭据错误分开提示。
+
+门户地址与公钥默认值在 [lib/shared/app_config.dart](lib/shared/app_config.dart)，构建时可用 dart-define 覆盖：
+
+```sh
+fvm flutter run -d windows \
+  --dart-define=UNIONE_PORTAL_URL=http://192.168.56.1/portal \
+  --dart-define=UNIONE_SM2_PUBLIC_KEY=04...
+```
+
+运行期也可在登录页底部的「服务器地址」临时切换门户，选择会写入 `unione.portal_url.v1` 并在下次启动复用；桌面端「设置 → 账户」可查看当前登录、所属组织与登录时间，或退出登录。
+
+相关实现集中在 [lib/shared/services/unione/](lib/shared/services/unione/)（SM2/SM3、门户客户端、会话存储）与 [lib/shared/widgets/auth/](lib/shared/widgets/auth/)（登录页、门户地址弹窗、登录门禁）。当前只接入账号密码登录，未接入一次性令牌（ticket）免登。
+
+```sh
+fvm flutter test test/shared/services/unione test/shared/models/unione_session_test.dart
+```
 
 ## 代码生成与检查
 

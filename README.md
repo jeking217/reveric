@@ -1,6 +1,6 @@
 <div align="center">
 
-# Reveric | 幻界
+# Unione AI Drama
 
 ### AI Native 桌面创作工作台，读懂整部作品，和你一起从小说写到成片
 
@@ -73,14 +73,14 @@
 
 ## 项目简介
 
-**Reveric（幻界）是一个本地优先、以智能体为核心的桌面创作工作台，覆盖长篇小说、剧本改编与短剧/漫剧制片。** 整部作品保存在你的设备上，同时也是智能体的工作区：写章节、改剧本、铺分镜、调机位、剪成片，说一句话，它就在作品里动手完成。
+**Unione AI Drama 是一个本地优先、以智能体为核心的桌面创作工作台，覆盖长篇小说、剧本改编与短剧/漫剧制片。** 整部作品保存在你的设备上，同时也是智能体的工作区：写章节、改剧本、铺分镜、调机位、剪成片，说一句话，它就在作品里动手完成。
 
 - **按需读取整部作品**：智能体自己检索需要的章节和设定，不用把人物小传复制进对话框。
 - **智能体操作所有模块**：小说、剧本、画布、3D 导演台、剪辑台，智能体都能直接上手操作。
 - **素材自动生成**：角色定妆、分镜参考图、视频片段与音频，由智能体调用模型直接生成到画布上。
 - **本地优先，模型自选（BYOK）**：作品数据保存在本地 SQLite，模型直连 OpenAI、Anthropic、Gemini、DeepSeek、Seedance、H3 或自建网关。
 
-![Reveric 主界面](.github/images/home.png)
+![Unione AI Drama 主界面](.github/images/home.png)
 
 ---
 
@@ -177,7 +177,7 @@
 
 ## 模型支持
 
-Reveric 坚持 Local-First 与 BYOK（Bring Your Own Key）理念。无论是文学创作还是短剧制片，创作者对模型选择拥有完全自主权。
+Unione AI Drama 坚持 Local-First 与 BYOK（Bring Your Own Key）理念。无论是文学创作还是短剧制片，创作者对模型选择拥有完全自主权。
 
 ### 1. 文本与推理模型 (LLM & Reasoning)
 
@@ -192,7 +192,7 @@ Reveric 坚持 Local-First 与 BYOK（Bring Your Own Key）理念。无论是文
 
 ### 2. 图像生成模型 (Image Generation)
 
-Reveric 在无限画布与故事图鉴中深度支持主流图像生成模型，用于角色定妆、分镜视觉参考、场景道具与概念插画创作：
+Unione AI Drama 在无限画布与故事图鉴中深度支持主流图像生成模型，用于角色定妆、分镜视觉参考、场景道具与概念插画创作：
 
 | 图像模型 / 厂商 | 代表型号 | 核心控制能力 | 接入方式 |
 | :--- | :--- | :--- | :--- |
@@ -204,7 +204,7 @@ Reveric 在无限画布与故事图鉴中深度支持主流图像生成模型，
 
 ### 3. 视频生成模型 (Video Generation)
 
-Reveric 为短剧制片与无限画布深度集成了主流视频生成大模型，支持首尾帧锁定、多图参考、多画幅比例与运镜调度：
+Unione AI Drama 为短剧制片与无限画布深度集成了主流视频生成大模型，支持首尾帧锁定、多图参考、多画幅比例与运镜调度：
 
 | 视频模型 / 厂商 | 代表型号 | 核心控制能力 | 接入方式 |
 | :--- | :--- | :--- | :--- |
@@ -273,7 +273,7 @@ Reveric 为短剧制片与无限画布深度集成了主流视频生成大模型
 
 <div align="center">
 
-**Reveric | 幻界** · 让智能体成为你的创作搭档
+**Unione AI Drama** · 让智能体成为你的创作搭档
 
 [主页](https://github.com/looplj/reveric) • [发行版](https://github.com/looplj/reveric/releases) • [问题反馈](https://github.com/looplj/reveric/issues) • [QQ 群](https://qm.qq.com/q/Ap8pfOWHDO)
 

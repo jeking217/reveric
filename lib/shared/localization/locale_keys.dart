@@ -6202,4 +6202,35 @@ abstract final class LocaleKeys {
       'settings.about_upload_logs_success';
   static const settingsAboutUploadLogsFailed =
       'settings.about_upload_logs_failed';
+  static const settingsAccount = 'settings.account';
+
+  // ── auth ──
+  static const authLoginTitle = 'auth.login_title';
+  static const authLoginSubtitle = 'auth.login_subtitle';
+  static const authUsernameLabel = 'auth.username_label';
+  static const authUsernameHint = 'auth.username_hint';
+  static const authPasswordLabel = 'auth.password_label';
+  static const authPasswordHint = 'auth.password_hint';
+  static const authCaptchaLabel = 'auth.captcha_label';
+  static const authCaptchaHint = 'auth.captcha_hint';
+  static const authCaptchaRefresh = 'auth.captcha_refresh';
+  static const authLoginAction = 'auth.login_action';
+  static const authLoggingIn = 'auth.logging_in';
+  static const authLoginFailed = 'auth.login_failed';
+  static const authCredentialsRequired = 'auth.credentials_required';
+  static const authEncryptFailed = 'auth.encrypt_failed';
+  static const authSessionSaveFailed = 'auth.session_save_failed';
+  static const authServerLabel = 'auth.server_label';
+  static const authServerEdit = 'auth.server_edit';
+  static const authServerTitle = 'auth.server_title';
+  static const authServerHint = 'auth.server_hint';
+  static const authServerHintDetail = 'auth.server_hint_detail';
+  static const authServerInvalid = 'auth.server_invalid';
+  static const authServerReset = 'auth.server_reset';
+  static const authAccountSectionTitle = 'auth.account_section_title';
+  static const authAccountSignedInAs = 'auth.account_signed_in_as';
+  static const authAccountOrg = 'auth.account_org';
+  static const authAccountSignedInAt = 'auth.account_signed_in_at';
+  static const authAccountSignOut = 'auth.account_sign_out';
+  static const authAccountSignOutConfirm = 'auth.account_sign_out_confirm';
 }

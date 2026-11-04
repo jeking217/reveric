@@ -14,6 +14,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'compact_printer.dart';
+import '../app_config.dart';
 
 class LogManager {
   static const int _maxLogFileSizeKB = 16 * 1024;
@@ -66,7 +67,7 @@ class LogManager {
       _fileOutput = AdvancedFileOutput(
         path: _logDirectory!,
         fileHeader:
-            '=== Reveric Startup Log ===\nStart Time: ${DateTime.now().toIso8601String()}\nPlatform: ${Platform.operatingSystem}\n',
+            '=== $appDisplayName Startup Log ===\nStart Time: ${DateTime.now().toIso8601String()}\nPlatform: ${Platform.operatingSystem}\n',
         maxFileSizeKB: _maxLogFileSizeKB,
         latestFileName: 'latest.log',
         fileNameFormatter: _startupLogFileName,

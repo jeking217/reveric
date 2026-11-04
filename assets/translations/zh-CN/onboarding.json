@@ -1,5 +1,5 @@
 {
-  "onboarding.title": "欢迎使用 幻界",
+  "onboarding.title": "欢迎使用 Unione AI Drama",
   "onboarding.welcome": "让我们开始设置你的写作助手",
   "onboarding.language_title": "选择语言",
   "onboarding.language_description": "选择你偏好的界面语言，随时可以在设置中更改。",
@@ -15,7 +15,7 @@
   "onboarding.step": "第 {current} / {total} 步",
   "onboarding.creating_demo": "正在新建 Demo 小说",
   "onboarding.user_profile_title": "你的档案",
-  "onboarding.user_profile_description": "设置你的显示名称和头像，个性化 幻界。",
+  "onboarding.user_profile_description": "设置你的显示名称和头像，个性化 Unione AI Drama。",
   "onboarding.username_label": "AI 怎么称呼您",
   "onboarding.username_hint": "输入称呼",
   "onboarding.avatar_label": "头像",

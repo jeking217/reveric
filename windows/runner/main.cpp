@@ -36,7 +36,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  std::wstring app_title = L"Reveric";
+  std::wstring app_title = L"Unione AI Drama";
   wchar_t title_buffer[128] = {};
   if (::LoadStringW(instance, IDS_APP_TITLE, title_buffer,
                     ARRAYSIZE(title_buffer)) > 0) {

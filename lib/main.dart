@@ -60,6 +60,7 @@ import 'shared/providers/official_skill_sync_providers.dart';
 import 'shared/providers/anonymous_reporting_providers.dart';
 import 'shared/providers/remote_bridge_providers.dart';
 import 'shared/providers/settings_providers.dart';
+import 'shared/widgets/auth/unione_auth_gate.dart';
 import 'shared/services/ai/prompt_template.dart';
 import 'shared/services/app_initialization.dart';
 import 'shared/services/crash_reporting/crash_sentinel.dart';
@@ -78,6 +79,7 @@ import 'shared/theme/theme.dart';
 import 'shared/utils/storage_paths.dart';
 import 'shared/logger/app_logger.dart';
 import 'third/form/flutter_hook_form.dart';
+import 'shared/app_config.dart';
 
 part 'main.g.dart';
 
@@ -537,10 +539,10 @@ class MyApp extends ConsumerWidget {
         final lightTheme = settings.themeDataForBrightness(Brightness.light);
         final darkTheme = settings.themeDataForBrightness(Brightness.dark);
 
-        final Widget home;
+        final Widget signedInHome;
         if (_isMobilePlatform) {
           // 移动端：走移动端 onboarding（仅填写用户名，无视频），完成后进入移动壳。
-          home = onboardingAsync.when(
+          signedInHome = onboardingAsync.when(
             loading: () {
               _log.info('MyApp: onboarding loading (mobile)');
               return const _LoadingScreen();
@@ -563,7 +565,7 @@ class MyApp extends ConsumerWidget {
             },
           );
         } else {
-          home = onboardingAsync.when(
+          signedInHome = onboardingAsync.when(
             loading: () {
               _log.info('MyApp: onboarding loading');
               return const _LoadingScreen();
@@ -583,6 +585,9 @@ class MyApp extends ConsumerWidget {
           );
         }
 
+        // 登录门禁：本地没有 Unione 会话时先登录，登录过的机器直接进入业务界面。
+        final home = UnioneAuthGate(child: signedInHome);
+
         return _buildApp(
           context: context,
           themeMode: themeMode,
@@ -590,6 +595,7 @@ class MyApp extends ConsumerWidget {
           darkThemeData: darkTheme,
           home: home,
           uiTextScale: uiTextScale,
+          showUpdateReminder: onboardingAsync.value == true,
         );
       },
     );
@@ -602,6 +608,7 @@ class MyApp extends ConsumerWidget {
     required RevericThemeData darkThemeData,
     required Widget home,
     required double uiTextScale,
+    bool showUpdateReminder = false,
   }) {
     final flutterThemeMode = switch (themeMode) {
       AppThemeMode.light => ThemeMode.light,
@@ -616,7 +623,7 @@ class MyApp extends ConsumerWidget {
         : darkThemeData;
 
     return MaterialApp(
-      title: 'Reveric',
+      title: appDisplayName,
       debugShowCheckedModeBanner: false,
       navigatorKey: SystemTrayService().navigatorKey,
       theme: effectiveThemeData.toThemeData(),
@@ -653,7 +660,7 @@ class MyApp extends ConsumerWidget {
                         navigatorKey: SystemTrayService().navigatorKey,
                         mobile: _isMobilePlatform,
                       ),
-                      if (home is MobileApp || home is NovelHomePage)
+                      if (showUpdateReminder)
                         UpdateReminder(
                           mobile: _isMobilePlatform,
                           onViewUpdate: () {

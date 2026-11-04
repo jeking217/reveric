@@ -84,7 +84,7 @@
   "plugin.task_model_not_found": "The selected model is no longer available. Choose another one in the plugin settings.",
   "plugin.task_permission_missing": "The plugin lacks a required permission. Grant it, then run again.",
   "plugin.tools_count": "Tools ({count})",
-  "plugin.unreviewed": "Local plugins are not reviewed by Reveric. Only install plugins from sources you trust.",
+  "plugin.unreviewed": "Local plugins are not reviewed by Unione AI Drama. Only install plugins from sources you trust.",
   "plugin.version_upgrade": "{from} → {to}",
   "plugin.unsaved_changes_message": "Your settings have unsaved changes. Discard them, or cancel and save first."
 }

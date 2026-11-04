@@ -1,5 +1,5 @@
 name: reveric
-description: "A new Flutter project."
+description: "Unione AI Drama — AI 小说与剧本创作桌面端。"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -287,14 +287,14 @@ flutter_launcher_icons:
   ios: true
   macos:
     generate: true
-    image_path: assets/logo/reveric_app_icon_macos_1024.png
+    image_path: assets/logo/unione_app_icon_1024.png
   windows:
     generate: true
-    image_path: assets/logo/reveric_app_icon_macos_1024.png
+    image_path: assets/logo/unione_app_icon_1024.png
   linux:
     generate: true
-    image_path: assets/logo/reveric_app_icon_ios_1024.png
-  image_path: assets/logo/reveric_app_icon_ios_1024.png
+    image_path: assets/logo/unione_app_icon_1024.png
+  image_path: assets/logo/unione_app_icon_1024.png
   adaptive_icon_background: assets/logo/reveric_adaptive_icon_background_432.png
   adaptive_icon_foreground: assets/logo/reveric_adaptive_icon_foreground_432.png
   remove_alpha_ios: true

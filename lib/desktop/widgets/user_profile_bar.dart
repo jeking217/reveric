@@ -15,6 +15,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../shared/providers/settings_providers.dart';
 import '../../shared/theme/theme.dart';
 import '../../shared/utils/storage_paths.dart';
+import '../../shared/app_config.dart';
 
 /// 用户信息栏的布局模式。
 enum UserProfileBarMode {
@@ -45,7 +46,7 @@ class UserProfileBar extends ConsumerWidget {
       data: (settings) {
         final username = settings.username.isNotEmpty
             ? settings.username
-            : 'Reveric';
+            : appDisplayName;
         final resolvedAvatar = RevericPaths.resolveStored(settings.avatarPath);
 
         final avatarSize = switch (mode) {

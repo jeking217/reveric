@@ -39,7 +39,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import '../../shared/app_config.dart' show appVersion;
+import '../../shared/app_config.dart' show appVersion, appDisplayName;
 import '../../shared/localization/app_localization.dart';
 import '../../shared/localization/locale_keys.dart';
 import '../../shared/providers/settings_providers.dart';
@@ -483,7 +483,7 @@ class SettingsPage extends HookConsumerWidget {
     String avatarPath, {
     VoidCallback? onTap,
   }) {
-    final displayName = username.isNotEmpty ? username : 'Reveric';
+    final displayName = username.isNotEmpty ? username : appDisplayName;
     final resolvedAvatar = RevericPaths.resolveStored(avatarPath);
     const avatarSize = 52.0;
 

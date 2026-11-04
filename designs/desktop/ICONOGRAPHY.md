@@ -102,28 +102,26 @@ treatment will visibly clash.
 
 ## Logo & brand mark
 
-The Reveric logo — "Reverie Fold" (source of truth: the repo's `assets/logo/reveric-raw.png`; vector: `assets/logo/reveric_mark.svg`):
+The product uses the **Unione** brand mark, the same artwork as the Unione
+platform console (`assets/logo/unione_logo.jpg`, source of truth):
 
-- A sweeping **ink‑blue ribbon** (`#283B5E`) rising from lower left to
-  upper right, its right edge cut straight.
-- A separate **folded periwinkle shape** (`#8797D2`) tucked beneath it,
-  separated from the ribbon by a thin canvas‑colored gap. Keep the gap;
-  never let the two shapes touch or overlap.
-- Both shapes are flat fills — no outlines, gradients or shadows.
-- The **wordmark** "Reveric" set in Literata Regular with light tracking,
-  roughly 1.75× the mark's width, with a hairline periwinkle divider
-  centered below.
+- A red cloud-and-wave mark with a white sweep through it, plus the
+  "Unione Cloud" wordmark underneath.
+- The artwork is a raster; it is used unchanged rather than redrawn, so
+  every surface shows the same brand as the platform it signs in to.
+- Surfaces that need a square icon crop to the artwork's own square frame;
+  nothing is stretched or recolored.
 
 Variants in `assets/logo/`:
 
-- `reveric_mark.svg` — square mark only, 1024×1024
-- `reveric_mark_128.png` / `reveric_mark_256.png` — square mark raster
-- `reveric_logo_stacked_transparent.png` / `_cream.png` — mark + wordmark
-  lockup, rendered from the mark SVG and the wordmark PNG
-- `reveric_app_icon_512.png` — app icon
+- `unione_logo.jpg` — the artwork, 1024×1024, used by the loading screen and
+  the login card
+- `unione_app_icon_1024.png` — square app icon, the source for the platform
+  icon sets
+- `unione_mark_32.png` / `unione_mark_32.ico` — tray icon, rounded corners
 
-Minimum mark size: 32px square. Wordmark minimum: 120px wide.
+Minimum mark size: 32px square.
 
-The logo never sits on a saturated background; surfaces should be
-`canvas`, `surface`, `surface-dim`, or one of the bundled background
-photographs.
+The artwork has its own white background, so it is drawn on a light tile
+(white on dark themes) rather than directly on a colored surface — the tile
+edge keeps the white square from reading as a mis-rendered block.
