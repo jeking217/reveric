@@ -175,6 +175,24 @@ class UnioneAuthClient {
     return _identityFrom(_envelope(response, action: 'login'));
   }
 
+  /// 用外部程序（AgenticOS）签发的一次性票据换平台身份。
+  ///
+  /// 与门户自己的票据是同一套语义：`accessToken` 走查询串，票据一次性，
+  /// 无论核销成功与否都已作废，重放只会得到「票据无效或已使用」。签发方
+  /// 与门户可能不是同一个服务，所以地址由调用方给出，而不是 [portalUrl]。
+  Future<UnioneIdentity> redeemHandoffTicket({
+    required String ticket,
+    required String issuerUrl,
+  }) async {
+    final uri = Uri.parse(
+      '${_normalize(issuerUrl)}/api/drama/access',
+    ).replace(queryParameters: {'accessToken': ticket});
+    final response = await _send(() => _http.get(uri), action: 'ticket');
+    return _identityFrom(
+      _envelope(response, action: 'ticket', fallback: '一次性登录票据无效或已使用'),
+    );
+  }
+
   void close() => _http.close();
 
   Future<http.Response> _send(
@@ -199,6 +217,7 @@ class UnioneAuthClient {
   Map<String, dynamic> _envelope(
     http.Response response, {
     required String action,
+    String fallback = '登录失败，请重试',
   }) {
     if (response.statusCode >= 500) {
       _log.warning('Unione $action answered ${response.statusCode}');
@@ -217,7 +236,7 @@ class UnioneAuthClient {
     if (decoded['success'] != true) {
       final message = '${decoded['message'] ?? ''}'.trim();
       _log.info('Unione $action refused by platform');
-      throw UnioneAuthException(message.isEmpty ? '登录失败，请重试' : message);
+      throw UnioneAuthException(message.isEmpty ? fallback : message);
     }
     return decoded;
   }

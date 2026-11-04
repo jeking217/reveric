@@ -60,6 +60,8 @@ import 'shared/providers/official_skill_sync_providers.dart';
 import 'shared/providers/anonymous_reporting_providers.dart';
 import 'shared/providers/remote_bridge_providers.dart';
 import 'shared/providers/settings_providers.dart';
+import 'shared/providers/unione_auth_providers.dart';
+import 'shared/services/unione/handoff_ticket.dart';
 import 'shared/widgets/auth/unione_auth_gate.dart';
 import 'shared/services/ai/prompt_template.dart';
 import 'shared/services/app_initialization.dart';
@@ -97,7 +99,7 @@ const _kStartupShowDelay = Duration(milliseconds: 800);
 bool get _isDesktopPlatform =>
     Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
   _launchStopwatch.start();
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -128,8 +130,17 @@ Future<void> main() async {
     return true;
   };
 
+  // 外部程序（AgenticOS）可以带一张一次性票据启动本应用：有票据就核销成
+  // 会话，没有就走原来的登录流程。解析结果通过 provider 注入，而不是读全局。
+  final handoff = HandoffTicket.fromArguments(args);
+  if (handoff.ticket != null) {
+    _log.info('Launch handed a one-time ticket for ${handoff.ticket!.issuer}');
+  } else if (handoff.problem != null) {
+    _log.warning('Launch handoff rejected: ${handoff.problem}');
+  }
+
   try {
-    await _startApplication();
+    await _startApplication(handoff);
   } catch (error, stackTrace) {
     _log.error(
       'Application startup failed',
@@ -151,7 +162,7 @@ Future<void> main() async {
   }
 }
 
-Future<void> _startApplication() async {
+Future<void> _startApplication(HandoffAttempt handoff) async {
   // 启动里程碑用 checkpoint（立即落盘）：启动期原生崩溃会丢缓冲日志，
   // 崩溃后据此判断死在哪个初始化阶段。
   _log.checkpoint('MAIN START');
@@ -245,6 +256,8 @@ Future<void> _startApplication() async {
                 overrides: [
                   if (_isDesktopPlatform)
                     mediaOperationsSupportedProvider.overrideWithValue(true),
+                  handoffTicketProvider.overrideWithValue(handoff.ticket),
+                  handoffProblemProvider.overrideWithValue(handoff.problem),
                 ],
                 observers: [if (kDebugMode) _AsyncProviderTransitionObserver()],
                 child: const _EagerInitialization(child: MyApp()),

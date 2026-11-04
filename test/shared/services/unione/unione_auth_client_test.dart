@@ -199,4 +199,92 @@ void main() {
       );
     });
   });
+
+  group('交接票据核销', () {
+    test('按签发方地址核销，票据走 accessToken 查询参数', () async {
+      Uri? seen;
+      final client = _client((request) async {
+        seen = request.url;
+        return _jsonResponse({
+          'success': true,
+          'code': 0,
+          'message': '',
+          'token': 'ds-1',
+          'principal': _principal,
+        });
+      });
+
+      final identity = await client.redeemHandoffTicket(
+        ticket: 'tk-abc123',
+        issuerUrl: 'http://10.0.0.7:3000/',
+      );
+
+      expect(
+        seen.toString(),
+        'http://10.0.0.7:3000/api/drama/access?accessToken=tk-abc123',
+      );
+      expect(identity.userId, 42);
+      expect(identity.tenantId, 7);
+      expect(identity.token, 'ds-1');
+      expect(identity.realName, '张三');
+    });
+
+    test('签发方拒绝时原样透出它那句话', () async {
+      final client = _client(
+        (request) async => _jsonResponse({
+          'success': false,
+          'code': 401,
+          'message': '票据无效或已使用',
+        }),
+      );
+
+      await expectLater(
+        client.redeemHandoffTicket(
+          ticket: 'tk-spent',
+          issuerUrl: 'http://10.0.0.7:3000',
+        ),
+        throwsA(
+          isA<UnioneAuthException>().having(
+            (error) => error.message,
+            'message',
+            '票据无效或已使用',
+          ),
+        ),
+      );
+    });
+
+    test('拒绝但没有说明时给出票据专用的兜底文案', () async {
+      final client = _client(
+        (request) async => _jsonResponse({'success': false, 'code': 400}),
+      );
+
+      await expectLater(
+        client.redeemHandoffTicket(
+          ticket: 'tk-x',
+          issuerUrl: 'http://10.0.0.7:3000',
+        ),
+        throwsA(
+          isA<UnioneAuthException>().having(
+            (error) => error.message,
+            'message',
+            '一次性登录票据无效或已使用',
+          ),
+        ),
+      );
+    });
+
+    test('签发方不可达属于环境问题，不是凭据问题', () async {
+      final client = _client(
+        (request) async => http.Response('gateway down', 502),
+      );
+
+      await expectLater(
+        client.redeemHandoffTicket(
+          ticket: 'tk-x',
+          issuerUrl: 'http://10.0.0.7:3000',
+        ),
+        throwsA(isA<UnionePortalException>()),
+      );
+    });
+  });
 }

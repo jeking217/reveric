@@ -222,6 +222,19 @@ fvm flutter run -d windows \
   --dart-define=UNIONE_SM2_PUBLIC_KEY=04...
 ```
 
+### 从 AgenticOS 带票启动
+
+AgenticOS 的「AI 短剧」入口会用一张一次性票据把本应用拉起来，省掉再登录一次：
+
+```sh
+reveric.exe --unione-ticket tk-<32位十六进制> --unione-issuer http://10.0.0.7:3000
+```
+
+- 有票据且本地没有会话：向 `{issuer}/api/drama/access?accessToken=…` 核销，换到身份后写入本地会话，直接进工作台。
+- 本地已有会话：票据不核销（票据是一次性的，白花掉只会让签发方以为这次交接失败），照常进工作台。
+- 票据无效、过期、已用过，或参数不成形：停在欢迎页的登录表单，横幅里说明原因（平台原话或参数问题），用户照常手动登录。
+- 环境变量 `UNIONE_TICKET` / `UNIONE_ISSUER` 可代替这两个参数，供不方便改命令行的启动器使用。票据不进日志。
+
 运行期也可在登录页底部的「服务器地址」临时切换门户，选择会写入 `unione.portal_url.v1` 并在下次启动复用；桌面端「设置 → 账户」可查看当前登录、所属组织与登录时间，或退出登录。
 
 相关实现集中在 [lib/shared/services/unione/](lib/shared/services/unione/)（SM2/SM3、门户客户端、会话存储）与 [lib/shared/widgets/auth/](lib/shared/widgets/auth/)（登录页、门户地址弹窗、登录门禁）。当前只接入账号密码登录，未接入一次性令牌（ticket）免登。

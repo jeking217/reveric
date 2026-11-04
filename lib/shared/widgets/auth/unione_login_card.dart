@@ -53,7 +53,28 @@ class _UnioneLoginCardState extends ConsumerState<UnioneLoginCard> {
   @override
   void initState() {
     super.initState();
+    _adoptHandoffError();
     unawaited(_refreshCaptcha());
+  }
+
+  /// 外部程序带票启动、票据却没通过时，错误落在表单上：用户接下来要做的
+  /// 正是手动登录，而横幅就在他输入账号密码的地方。
+  void _adoptHandoffError() {
+    // 两种来源：参数本身就不成立（启动前就确定），或核销被签发方拒绝（启动后
+    // 才知道）。两者对用户是同一件事——本该自动登录，现在需要他手动登录。
+    final message =
+        ref.read(handoffTicketErrorProvider) ??
+        ref.read(handoffProblemProvider);
+    if (message == null || message.isEmpty) {
+      return;
+    }
+    _error = message;
+    // 只属于这一次启动：显示过就清掉，之后重新打开表单不再挂着旧错误。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(handoffTicketErrorProvider.notifier).clear();
+      }
+    });
   }
 
   @override
